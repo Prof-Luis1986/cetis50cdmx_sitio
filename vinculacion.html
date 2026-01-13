@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CETIS 50 - Vinculación</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+    .controls input { padding:8px 10px; border-radius:8px; border:1px solid #ddd; }
+
+    .announcements-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .announcement-card {
+      position: relative;
+      background: radial-gradient(circle at top left, #b63b44 0%, #7a1e29 40%, #1b2847 100%);
+      border-radius: 18px;
+      padding: 18px 20px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    }
+
+    .announcement-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at 0 0, rgba(255,255,255,0.08) 0, transparent 55%);
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .announcement-card-inner { position: relative; z-index: 1; }
+    .announcement-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.85rem; }
+    .announcement-left { display: flex; align-items: center; gap: 10px; }
+    .announcement-emoji { font-size: 1.9rem; }
+    .announcement-categoria { background: rgba(255,255,255,0.16); padding: 4px 12px; border-radius: 999px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; font-size: 0.75rem; }
+    .announcement-fecha { color: #ffe4e4; font-size: 0.8rem; }
+    .announcement-logo { height: 42px; width: auto; filter: drop-shadow(0 0 5px rgba(0,0,0,0.4)); }
+    .announcement-card h3 { margin: 4px 0 8px 0; font-size: 1.3rem; font-weight: 800; color: #ffffff; }
+    .announcement-card .resumen { margin: 0 0 12px 0; color: #fbe9e9; font-size: 0.96rem; }
+    .announcement-footer { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; color: #ffe4e4; margin-top: auto; }
+    .announcement-badge { background: rgba(0,0,0,0.28); padding: 5px 10px; border-radius: 999px; }
+    .announcement-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(0,0,0,0.45); filter: brightness(1.05); }
+  </style>
+</head>
+<body data-page-id="vinculacion">
+
+<header class="site-header" role="banner">
+  <div class="banner-container">
+    <img class="banner-logo" src="https://raw.githubusercontent.com/Prof-Luis1986/recursos-cetis50/refs/heads/main/logo-cetis50.jpg" alt="Logo CETIS 50" />
+    <div class="banner-text">Centro de Estudios Tecnológicos Industrial y de Servicios N° 50</div>
+  </div>
+</header>
+
+<nav class="main-nav" role="navigation" aria-label="Menú principal del sitio">
+  <ul>
+    <li><a href="index.html">Inicio</a></li>
+    <li><a href="oferta.html">Oferta Educativa</a></li>
+    <li><a href="departamentos.html">Departamentos</a></li>
+    <li><a href="alumnos.html">Alumnos</a></li>
+    <li><a href="docentes.html">Docentes</a></li>
+    <li><a href="eventos.html">Eventos Educativos</a></li>
+    <li><a href="vinculacion.html" class="active">Vinculación</a></li>
+    <li><a href="contacto.html">Contacto</a></li>
+  </ul>
+</nav>
+
+<main class="container card" role="main">
+  <h1 class="page-title">Vinculación</h1>
+
+  <section class="controls" aria-label="Controles de filtrado">
+    <input id="search-input" type="search" placeholder="Buscar por título, contenido..." />
+  </section>
+
+  <section id="announcements-section" aria-live="polite">
+    <div id="announcements-list" class="announcements-list"></div>
+    <div id="no-announcements" style="display:none;color:#7a1e29;font-weight:600;">No hay avisos de vinculación.</div>
+    <div id="load-error" style="display:none;color:#7a1e29;font-weight:600;">Error al cargar avisos.</div>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+  (function(){
+    const CATEGORY = 'vinculacion';
+    const db = firebase.firestore();
+
+    function formatDate(ts){ if(!ts) return ''; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' }); }
+    function truncate(text, n=180){ if(!text) return ''; return text.length>n?text.slice(0,n)+'...':text; }
+
+    async function fetchAnnouncements(category) {
+      const snapshot = await db.collection('announcements').where('category','==',category).orderBy('createdAt','desc').get();
+      const hoy = new Date();
+      const list = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const expiry = data.expiryDate && typeof data.expiryDate.toDate === 'function' ? data.expiryDate.toDate() : null;
+        if (expiry && expiry < hoy) return;
+        const createdAtDate = (data.createdAt && typeof data.createdAt.toDate === 'function') ? data.createdAt.toDate() : null;
+        list.push({ id: doc.id, ...data, _createdAtDate: createdAtDate, _expiryDate: expiry });
+      });
+      return list;
+    }
+
+    function abrirModalAviso(avisoData) {
+      const modal = document.createElement('div');
+      modal.id = 'modal-aviso-publico';
+      modal.style.cssText = `position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 9999; animation: fadeIn 0.25s ease-out;`;
+      const modalContent = document.createElement('div');
+      modalContent.style.cssText = `background: #ffffff; border-radius: 18px; max-width: 720px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.35); position: relative; animation: slideUp 0.25s ease-out; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;`;
+
+      const fechaPub = avisoData._createdAtDate ? avisoData._createdAtDate.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+      let expiraTexto = 'Sin fecha de expiración';
+      if (avisoData._expiryDate) expiraTexto = avisoData._expiryDate.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+
+      let eventoTexto = '';
+      if (avisoData.eventDate && typeof avisoData.eventDate.toDate === 'function') {
+        const f = avisoData.eventDate.toDate();
+        eventoTexto = `<div style="background:#e3f2fd;padding:12px 14px;border-radius:10px;margin-bottom:18px;border-left:4px solid #1565c0;"><strong style="color:#0d47a1;">📅 Fecha del evento:</strong><br><span style="color:#0d47a1;font-size:1rem;">${f.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div>`;
+      }
+
+      const especialidades = (avisoData.specialties && avisoData.specialties.length) ? avisoData.specialties.map(s => `<span style="background:#7a1e29;color:#fff;padding:4px 10px;border-radius:999px;font-size:0.8rem;margin:3px;display:inline-block;">${escapeHtml(s)}</span>`).join('') : '<span style="color:#666;">Todas las especialidades</span>';
+      const enlaceHTML = avisoData.linkUrl ? `<div style="margin-top:15px;"><a href="${escapeAttr(avisoData.linkUrl)}" target="_blank" rel="noopener" style="color:#7a1e29;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px;">🔗 Ver más información</a></div>` : '';
+
+      modalContent.innerHTML = `
+        <style>@keyframes fadeIn { from {opacity:0;} to {opacity:1;} } @keyframes slideUp { from {transform:translateY(40px);opacity:0;} to {transform:translateY(0);opacity:1;} } @keyframes fadeOut { from {opacity:1;} to {opacity:0;} }</style>
+        <div style="background:linear-gradient(135deg,#7a1e29 0%,#5d1620 100%);color:#fff;padding:22px 24px;border-radius:18px 18px 0 0;position:relative;">
+          <button id="cerrar-modal-aviso" style="position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;">✕</button>
+          <div style="font-size:0.9rem;opacity:0.9;margin-bottom:6px;">🤝 Vinculación</div>
+          <h2 style="margin:0 0 4px 0;font-size:1.6rem;line-height:1.3;">${escapeHtml(avisoData.title || 'Sin título')}</h2>
+          <div style="font-size:0.8rem;opacity:0.9;">Publicado el ${fechaPub}</div>
+        </div>
+        <div style="padding:22px 24px 24px 24px;">
+          ${eventoTexto}
+          <div style="color:#333;line-height:1.7;font-size:1rem;white-space:pre-wrap;margin-bottom:18px;">${escapeHtml(avisoData.content || '')}</div>
+          ${enlaceHTML}
+          <hr style="border:none;border-top:1px solid #eee;margin:22px 0;">
+          <div style="background:#fafafa;border-radius:12px;padding:16px 14px;border-left:4px solid #7a1e29;">
+            <div style="margin-bottom:10px;"><strong style="color:#7a1e29;">🎯 Especialidades:</strong><br><div style="margin-top:6px;">${especialidades}</div></div>
+            <div style="margin-bottom:6px;"><strong style="color:#7a1e29;">⏰ Expira:</strong> <span style="color:#555;">${expiraTexto}</span></div>
+          </div>
+          <div style="margin-top:18px;display:flex;justify-content:flex-end;">
+            <button id="modal-ok-publico" style="padding:10px 20px;background:#7a1e29;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:all 0.2s ease;">Cerrar</button>
+          </div>
+        </div>
+      `;
+
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+
+      const btnCerrar = document.getElementById('cerrar-modal-aviso');
+      const btnOk = document.getElementById('modal-ok-publico');
+      const cerrar = () => { modal.style.animation = 'fadeOut 0.2s ease-out forwards'; setTimeout(() => modal.remove(), 200); };
+      btnCerrar.addEventListener('click', cerrar);
+      btnOk.addEventListener('click', cerrar);
+      modal.addEventListener('click', (e) => { if (e.target === modal) cerrar(); });
+      const escListener = (e) => { if (e.key === 'Escape') { cerrar(); document.removeEventListener('keydown', escListener); } };
+      document.addEventListener('keydown', escListener);
+
+      btnCerrar.addEventListener('mouseenter', () => { btnCerrar.style.background = 'rgba(255,255,255,0.3)'; btnCerrar.style.transform = 'rotate(90deg)'; });
+      btnCerrar.addEventListener('mouseleave', () => { btnCerrar.style.background = 'rgba(255,255,255,0.15)'; btnCerrar.style.transform = 'rotate(0deg)'; });
+      btnOk.addEventListener('mouseenter', () => { btnOk.style.background = '#5d1620'; btnOk.style.transform = 'translateY(-2px)'; btnOk.style.boxShadow = '0 4px 12px rgba(122, 30, 41, 0.3)'; });
+      btnOk.addEventListener('mouseleave', () => { btnOk.style.background = '#7a1e29'; btnOk.style.transform = 'translateY(0)'; btnOk.style.boxShadow = 'none'; });
+    }
+
+    function renderAnnouncements(list) {
+      const container = document.getElementById('announcements-list');
+      const noEl = document.getElementById('no-announcements');
+      container.innerHTML = '';
+      if (!list.length) { noEl.style.display='block'; return; } else noEl.style.display='none';
+
+      list.forEach(aviso => {
+        const card = document.createElement('div');
+        card.className = 'announcement-card';
+        const emoji = '🤝';
+        const dateText = aviso._createdAtDate ? formatDate(aviso._createdAtDate) : '';
+        const expiryText = aviso._expiryDate ? aviso._expiryDate.toLocaleDateString('es-MX') : 'Sin expiración';
+        const specialties = (aviso.specialties && aviso.specialties.length) ? aviso.specialties.join(', ') : 'Todas las especialidades';
+        const resumen = truncate(aviso.content || '');
+        const logoUrl = 'https://raw.githubusercontent.com/Prof-Luis1986/recursos-cetis50/refs/heads/main/logo-cetis50.jpg';
+
+        card.innerHTML = `
+          <div class="announcement-card-inner">
+            <div class="announcement-card-header">
+              <div class="announcement-left">
+                <span class="announcement-emoji">${emoji}</span>
+                <div>
+                  <div class="announcement-categoria">🤝 Vinculación</div>
+                  <div class="announcement-fecha">${dateText}</div>
+                </div>
+              </div>
+              <img src="${logoUrl}" alt="Logo CETIS 50" class="announcement-logo" />
+            </div>
+            <h3>${escapeHtml(aviso.title || 'Sin título')}</h3>
+            <p class="resumen">${escapeHtml(resumen)}</p>
+            <div class="announcement-footer">
+              <span class="announcement-badge">🎯 ${escapeHtml(specialties)}</span>
+              <span class="announcement-badge">⏰ ${expiryText}</span>
+            </div>
+          </div>
+        `;
+        card.addEventListener('click', () => { abrirModalAviso(aviso); });
+        container.appendChild(card);
+      });
+    }
+
+    function escapeHtml(str){ if(!str) return ''; return String(str).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+    function escapeAttr(url){ try{ return encodeURI(url); }catch(e){ return '#'; } }
+
+    let allAnnouncements = [];
+    window.addEventListener('DOMContentLoaded', async ()=>{
+      try {
+        allAnnouncements = await fetchAnnouncements(CATEGORY);
+        renderAnnouncements(allAnnouncements);
+      } catch (err) {
+        console.error('Error:',err);
+        document.getElementById('load-error').style.display='block';
+      }
+      document.getElementById('search-input').addEventListener('input', ()=>{
+        const q = (document.getElementById('search-input').value||'').toLowerCase().trim();
+        const filtered = allAnnouncements.filter(a => (a.title+' '+(a.content||'')).toLowerCase().includes(q));
+        renderAnnouncements(filtered);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

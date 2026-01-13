@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CETIS 50 - Boleta</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .boleta-header {
+      text-align: center;
+      margin-bottom: 18px;
+      color: var(--vino-700);
+    }
+    .boleta-header h1 {
+      font-size: 1.6rem;
+      margin-bottom: 4px;
+    }
+    .boleta-header p {
+      color: #555;
+      margin: 0;
+    }
+
+    .boleta-search {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .boleta-search input {
+      flex: 1;
+      min-width: 220px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 0.98rem;
+    }
+    .btn {
+      background-color: var(--vino-700);
+      color: var(--blanco);
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .btn:hover {
+      background-color: var(--vino-500);
+    }
+    .btn.secondary {
+      background: transparent;
+      color: var(--vino-700);
+      border: 2px solid var(--vino-700);
+    }
+    .btn.secondary:hover {
+      background-color: rgba(122,30,41,0.08);
+    }
+
+    .doc-print-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border: 2px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      background: #fffdfa;
+    }
+    .doc-print-header img {
+      width: 68px;
+      height: 68px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+    .doc-header-text h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #1b2847;
+    }
+    .doc-header-text p {
+      margin: 4px 0;
+      font-size: 0.9rem;
+      color: #444;
+    }
+    .doc-header-text small {
+      color: #7a1e29;
+      font-weight: 600;
+    }
+
+    #searchMsg {
+      margin-top: 6px;
+      text-align: center;
+      font-weight: 600;
+      color: #9b1d1d;
+    }
+
+    .boleta-document {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 16px;
+      padding: 18px 20px 22px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    }
+
+    .boleta-meta {
+      margin-bottom: 14px;
+      line-height: 1.6;
+      color: #222;
+      font-size: 0.9rem;
+    }
+    .boleta-meta strong {
+      color: var(--vino-700);
+    }
+
+    .boleta-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin-bottom: 10px;
+    }
+
+    table.boleta-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.85rem;
+    }
+    table.boleta-table th,
+    table.boleta-table td {
+      border: 1px solid #333;
+      padding: 6px;
+      text-align: center;
+    }
+    table.boleta-table th {
+      background: var(--vino-800);
+      color: var(--blanco);
+    }
+    table.boleta-table td.asign {
+      text-align: left;
+    }
+
+    .signature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 18px;
+      margin-top: 20px;
+    }
+    .signature-block {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #444;
+    }
+    .signature-line {
+      border-bottom: 1px solid #555;
+      margin: 0 auto 6px;
+      width: 100%;
+      height: 42px;
+    }
+    .signature-block strong {
+      display: block;
+      color: #1b2847;
+    }
+    .signature-block span {
+      font-size: 0.8rem;
+      color: #555;
+    }
+
+    @media print {
+      .site-header,
+      .main-nav,
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background: #ffffff;
+        padding: 0;
+      }
+      main.container.card {
+        box-shadow: none;
+        background: #ffffff;
+        padding: 0;
+      }
+      .boleta-document {
+        max-width: 100%;
+        border: none;
+        box-shadow: none;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .boleta-search {
+        flex-direction: column;
+      }
+      .boleta-search input {
+        width: 100%;
+      }
+      table.boleta-table {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body data-page-id="boleta">
+
+<header class="site-header" role="banner">
+  <div class="banner-container">
+    <img class="banner-logo" src="https://raw.githubusercontent.com/Prof-Luis1986/recursos-cetis50/refs/heads/main/logo-cetis50.jpg" alt="Logo CETIS 50" />
+    <div class="banner-text">Centro de Estudios Tecnológicos Industrial y de Servicios N° 50</div>
+  </div>
+</header>
+
+<nav class="main-nav" role="navigation" aria-label="Menú principal del sitio">
+  <ul>
+    <li><a href="index.html">Inicio</a></li>
+    <li><a href="oferta.html">Oferta Educativa</a></li>
+    <li><a href="departamentos.html">Departamentos</a></li>
+    <li><a href="alumnos.html">Alumnos</a></li>
+    <li><a href="docentes.html">Docentes</a></li>
+    <li><a href="eventos.html">Eventos Educativos</a></li>
+    <li><a href="vinculacion.html">Vinculación</a></li>
+    <li><a href="contacto.html">Contacto</a></li>
+  </ul>
+</nav>
+
+<main class="container card" role="main">
+  <section aria-labelledby="titulo-boleta">
+    <div class="boleta-header">
+      <h1 id="titulo-boleta" class="page-title">Consulta de Boleta</h1>
+      <p>Ingresa tu número de control para consultar e imprimir tu boleta de calificaciones.</p>
+    </div>
+
+    <div class="boleta-search no-print">
+      <input id="numeroControlInput" type="text" placeholder="Número de control" aria-label="Número de control" />
+      <button id="searchBtn" class="btn">Buscar</button>
+      <button id="loginBtn" class="btn secondary">Iniciar sesión</button>
+    </div>
+    <div id="searchMsg" role="status" aria-live="polite" class="no-print"></div>
+
+    <section id="boletaContainer" style="display:none; margin-top:18px;">
+      <div class="no-print" style="text-align:right; margin-bottom:10px;">
+        <button class="btn" onclick="window.print()">Imprimir Boleta</button>
+      </div>
+      <div id="boletaHtml"></div>
+    </section>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+  (function(){
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    const searchBtn = document.getElementById('searchBtn');
+    const numInput = document.getElementById('numeroControlInput');
+    const searchMsg = document.getElementById('searchMsg');
+    const boletaContainer = document.getElementById('boletaContainer');
+    const boletaHtml = document.getElementById('boletaHtml');
+    const loginBtn = document.getElementById('loginBtn');
+    const LOGO_URL = 'https://raw.githubusercontent.com/Prof-Luis1986/recursos-cetis50/refs/heads/main/logo-cetis50.jpg';
+    const REQUIRED_DOMAIN = '@cetis50cdmx.com';
+    const AUTHORITIES = {
+      director: 'EDGAR OAXACA HERNÁNDEZ'
+    };
+    let isAuthorized = false;
+    searchBtn.disabled = true;
+
+    loginBtn.addEventListener('click', async () => {
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+      } catch (err) {
+        console.error('Error en login:', err);
+        searchMsg.textContent = 'Error al iniciar sesión: ' + (err.message || err);
+        searchMsg.style.color = '#9b1d1d';
+      }
+    });
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user && hasAllowedDomain(user)) {
+        isAuthorized = true;
+        searchBtn.disabled = false;
+        loginBtn.style.display = 'none';
+        searchMsg.textContent = 'Sesión iniciada como ' + (user.email || user.displayName || 'usuario');
+        searchMsg.style.color = '#155724';
+      } else {
+        isAuthorized = false;
+        searchBtn.disabled = true;
+        loginBtn.style.display = '';
+        boletaContainer.style.display = 'none';
+        boletaHtml.innerHTML = '';
+        if (user && !hasAllowedDomain(user)) {
+          await auth.signOut();
+          searchMsg.textContent = 'Debes usar tu correo @cetis50cdmx.com para consultar la boleta.';
+        } else {
+          searchMsg.textContent = 'Inicia sesión con tu correo institucional (@cetis50cdmx.com) para continuar.';
+        }
+        searchMsg.style.color = '#9b1d1d';
+      }
+    });
+
+    function hasAllowedDomain(user){
+      if (!user || !user.email) return false;
+      return user.email.toLowerCase().endsWith(REQUIRED_DOMAIN);
+    }
+
+    function ensureAuthorizedUser(){
+      if (!isAuthorized) {
+        searchMsg.textContent = 'Debes iniciar sesión con tu correo @cetis50cdmx.com antes de buscar.';
+        searchMsg.style.color = '#9b1d1d';
+        return false;
+      }
+      return true;
+    }
+
+    function escapeHtml(str){
+      if(!str) return '';
+      return String(str).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+    }
+
+    function renderBoletaTemplate(b) {
+      let materias = Array.isArray(b.materias) ? b.materias : [];
+      console.log('📚 Total de materias:', materias.length);
+      console.log('📋 Materias:', materias);
+
+      const materiasRows = materias.map(m => `
+        <tr>
+          <td>${escapeHtml(m.clave || '')}</td>
+          <td class="asign">${escapeHtml(m.nombre || '')}</td>
+          <td>${m.p1 ?? ''}</td>
+          <td>${m.p2 ?? ''}</td>
+          <td>${m.p3 ?? ''}</td>
+          <td>${m.a1 ?? ''}</td>
+          <td>${m.a2 ?? ''}</td>
+          <td>${m.a3 ?? ''}</td>
+        </tr>
+      `).join('');
+
+      boletaHtml.innerHTML = `
+        <div class="boleta-document">
+          <div class="doc-print-header">
+            <img src="${LOGO_URL}" alt="Logo CETIS 50" />
+            <div class="doc-header-text">
+              <h2>Centro de Estudios Tecnológicos Industrial y de Servicios N° 50</h2>
+              <p>Dirección General de Educación Tecnológica Industrial y de Servicios (DGETI)</p>
+              <small>Boleta oficial de calificaciones</small>
+            </div>
+          </div>
+
+          <div class="boleta-meta">
+            <strong>CARRERA:</strong> ${escapeHtml(b.carrera || '')} &nbsp;&nbsp;
+            <strong>NO. CONTROL:</strong> ${escapeHtml(b.numeroControl || '')}<br/>
+            <strong>NOMBRE:</strong> ${escapeHtml(b.nombre || '')} &nbsp;&nbsp;
+            <strong>GRUPO:</strong> ${escapeHtml(b.grupo || '')} &nbsp;&nbsp;
+            <strong>TURNO:</strong> ${escapeHtml(b.turno || '')} &nbsp;&nbsp;
+            <strong>GENERACIÓN:</strong> ${escapeHtml(b.generacion || '')} &nbsp;&nbsp;
+            <strong>SEMESTRE:</strong> ${escapeHtml(b.semestre || '')}
+          </div>
+
+          <div class="boleta-table-wrapper">
+            <table class="boleta-table">
+              <thead>
+                <tr>
+                  <th>CLAVE</th>
+                  <th>ASIGNATURA / MÓDULO</th>
+                  <th>1ER. P.</th>
+                  <th>2DO. P.</th>
+                  <th>3ER. P.</th>
+                  <th>1ER. A.</th>
+                  <th>2DO. A.</th>
+                  <th>3ER. A.</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${materiasRows || '<tr><td colspan="8">No hay materias registradas</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="signature-grid">
+            <div class="signature-block">
+              <div class="signature-line"></div>
+              <strong>${escapeHtml(AUTHORITIES.director)}</strong>
+              <span>Director del Plantel</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function buscarBoleta() {
+      if (!ensureAuthorizedUser()) return;
+
+      const numero = (numInput.value || '').trim();
+      searchMsg.textContent = '';
+      boletaContainer.style.display = 'none';
+
+      if (!numero) {
+        searchMsg.textContent = 'Ingresa un número de control.';
+        searchMsg.style.color = '#9b1d1d';
+        return;
+      }
+
+      searchMsg.textContent = 'Buscando...';
+      searchMsg.style.color = '#555';
+
+      try {
+        console.log('🔍 Buscando boleta para:', numero);
+        const doc = await db.collection('boletas').doc(numero).get();
+        
+        if (!doc.exists) {
+          console.warn('❌ No se encontró documento con ID:', numero);
+          searchMsg.textContent = 'No se encontró la boleta para ese número.';
+          searchMsg.style.color = '#9b1d1d';
+          return;
+        }
+        
+        const data = doc.data();
+        console.log('✅ Documento encontrado:', data);
+        
+        renderBoletaTemplate(data);
+        boletaContainer.style.display = 'block';
+        searchMsg.textContent = '';
+      } catch (err) {
+        console.error('❌ Error buscando boleta:', err);
+        searchMsg.textContent = 'Error al buscar la boleta: ' + (err.message || err);
+        searchMsg.style.color = '#9b1d1d';
+      }
+    }
+
+    searchBtn.addEventListener('click', buscarBoleta);
+    numInput.addEventListener('keydown', e => { if (e.key === 'Enter') buscarBoleta(); });
+  })();
+</script>
+</body>
+</html>

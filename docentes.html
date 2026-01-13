@@ -1,0 +1,1354 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CETIS 50 - Docentes</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    /* ==========================
+       Estilos específicos docentes
+       ========================== */
+
+    /* Sección de acceso (antes de login) */
+    #docentes-acceso {
+      text-align: center;
+      padding: 30px 20px;
+    }
+    #docentes-acceso .page-title {
+      margin-bottom: 10px;
+    }
+    #docentes-acceso p {
+      font-size: 1.1rem;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    #loginDocentesBtn {
+      font-size: 1.1rem;
+      padding: 12px 24px;
+    }
+    #docentes-msg {
+      margin-top: 15px;
+      font-weight: 600;
+      color: var(--vino-700);
+    }
+
+    /* Contenido interno para docentes (después de login) */
+    #docentes-contenido {
+      padding: 20px;
+    }
+    #docentes-contenido .page-title {
+      margin-bottom: 20px;
+    }
+    #docentes-contenido h2 {
+      color: var(--vino-700);
+      margin-top: 25px;
+      margin-bottom: 10px;
+      font-size: 1.4rem;
+    }
+    #docentes-contenido ul {
+      list-style: disc;
+      margin-left: 25px;
+      color: #333;
+      line-height: 1.6;
+    }
+    #logoutDocentesBtn {
+      margin-top: 30px;
+      background-color: #555;
+      color: var(--blanco);
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+    }
+    #logoutDocentesBtn:hover {
+      background-color: #333;
+    }
+
+    /* Horario Institucional */
+    .inst-note {
+      background: linear-gradient(135deg, rgba(182, 59, 68, 0.1), rgba(122, 30, 41, 0.08));
+      border-left: 4px solid var(--vino-600);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: var(--vino-700);
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .inst-cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 10px;
+    }
+
+    .inst-card {
+      background: linear-gradient(135deg, #f9f9f9, #ffffff);
+      border-radius: 10px;
+      padding: 18px 20px;
+      border: 1px solid #e5e5e5;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .inst-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .inst-card h3 {
+      font-size: 1.15rem;
+      margin-bottom: 6px;
+      color: var(--vino-700);
+      font-weight: 700;
+    }
+
+    .inst-card-subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 12px;
+      font-style: italic;
+    }
+
+    .horarios-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      margin-bottom: 24px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #1b2847, #7a1e29);
+      color: #fff;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.25);
+    }
+    .horarios-cta h2 {
+      margin: 0 0 6px 0;
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+    .horarios-cta p {
+      margin: 0;
+      max-width: 520px;
+      line-height: 1.4;
+      color: rgba(255,255,255,0.88);
+    }
+    .horarios-cta a {
+      background: #ffe082;
+      color: #5d1620;
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .horarios-cta a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.35);
+    }
+    @media (max-width: 640px) {
+      .horarios-cta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    .attendance-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      margin: 18px 0;
+      border-radius: 18px;
+      background: linear-gradient(130deg, #0d1b2a, #1b2847, #7a1e29);
+      color: #fff;
+      box-shadow: 0 14px 30px rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .attendance-cta h2 {
+      margin: 0 0 6px 0;
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+    }
+    .attendance-cta p {
+      margin: 0;
+      max-width: 540px;
+      line-height: 1.45;
+      color: rgba(255,255,255,0.92);
+    }
+    .attendance-cta a {
+      background: #ffe082;
+      color: #5d1620;
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-decoration: none;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .attendance-cta a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.45);
+    }
+    @media (max-width: 640px) {
+      .attendance-cta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    .turno-summary {
+      margin-top: 28px;
+      padding: 18px 20px;
+      border-radius: 14px;
+      background: #f7f4f5;
+      border: 1px solid rgba(27,40,71,0.08);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+    }
+    .turno-summary p {
+      margin: 4px 0 14px 0;
+      color: #555;
+    }
+    .turno-resumen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+    .turno-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+    .turno-card h3 {
+      margin: 0 0 6px 0;
+      color: var(--vino-700);
+      font-size: 1.05rem;
+    }
+    .turno-card strong {
+      color: #1b2847;
+    }
+    .turno-card .turno-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 8px;
+      margin: 10px 0 8px 0;
+      font-size: 0.88rem;
+    }
+    .turno-card .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .turno-card .chip {
+      background: rgba(27,40,71,0.08);
+      color: #1b2847;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+    }
+
+    .docente-loads {
+      margin-top: 30px;
+    }
+    .docente-loads h2 {
+      margin-bottom: 6px;
+    }
+    .carga-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 12px 0 14px 0;
+    }
+    .carga-filter-bar select {
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #c8ccd8;
+      min-width: 180px;
+    }
+    .carga-filter-bar input {
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #c8ccd8;
+      min-width: 220px;
+    }
+    table.carga-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 12px 26px rgba(0,0,0,0.08);
+    }
+    table.carga-table th,
+    table.carga-table td {
+      border: 1px solid #ddd;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    table.carga-table th {
+      background: rgba(27,40,71,0.08);
+      color: #1b2847;
+      font-weight: 700;
+    }
+    table.carga-table tbody tr:nth-child(even) {
+      background: #fafbff;
+    }
+    .docente-loads .schedule-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+    @media (max-width: 700px) {
+      table.carga-table {
+        font-size: 0.78rem;
+      }
+      table.carga-table th,
+      table.carga-table td {
+        padding: 5px 6px;
+      }
+    }
+
+    .inst-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 0.9rem;
+    }
+
+    .inst-table th,
+    .inst-table td {
+      border: 1px solid #ddd;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .inst-table th {
+      background: linear-gradient(135deg, var(--vino-600), var(--vino-500));
+      color: var(--blanco);
+      font-weight: 700;
+    }
+
+    .inst-table tbody tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .inst-table tbody tr:hover {
+      background-color: #f0f0f0;
+    }
+
+    /* Lista compacta de avisos para docentes */
+    .docentes-lista {
+      margin-top: 10px;
+      padding: 0;
+      list-style: none;
+    }
+
+    /* Clases del modal tipo burbuja */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(40, 10, 15, 0.78);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-burbuja {
+      display: none;
+    }
+    .modal-burbuja-content {
+      width: 100%;
+      max-width: 700px;
+      position: relative;
+      border-radius: 18px;
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .close-button {
+      position: absolute;
+      right: 14px;
+      top: 10px;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 26px;
+      cursor: pointer;
+      z-index: 10;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    }
+
+    .announcement-card.docentes-card {
+      background: linear-gradient(135deg, #ffffff, #f8f1f2);
+      color: var(--vino-700);
+      border-radius: 18px;
+      padding: 24px 26px 22px 26px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .announcement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .announcement-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(161,37,47,0.12);
+      color: var(--vino-700);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .announcement-tag .tag-icon {
+      font-size: 1rem;
+    }
+    .announcement-date {
+      font-size: 0.82rem;
+      color: #666;
+    }
+    .announcement-body {
+      margin-top: 6px;
+    }
+    .announcement-title {
+      margin: 0 0 6px 0;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--vino-700);
+    }
+    .announcement-content {
+      margin: 0;
+      font-size: 0.98rem;
+      color: #333;
+      line-height: 1.5;
+    }
+    .announcement-footer {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .chip-turno {
+      background: rgba(161,37,47,0.08);
+      color: var(--vino-700);
+    }
+    .chip-sin-expiracion {
+      background: rgba(0,0,0,0.05);
+      color: #444;
+    }
+    .chip-link {
+      background: var(--vino-700);
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .announcement-logo {
+      position: absolute;
+      right: 12px;
+      bottom: 10px;
+      opacity: 0.14;
+    }
+    .announcement-logo img {
+      width: 90px;
+      height: auto;
+    }
+
+    .video-responsive {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: 12px;
+      margin-top: 8px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+    .video-responsive iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    @media (max-width: 700px) {
+      .announcement-card.docentes-card {
+        padding: 20px 18px 18px 18px;
+      }
+      .announcement-logo {
+        display: none;
+      }
+      .inst-cards-container {
+        grid-template-columns: 1fr;
+      }
+      .inst-card {
+        padding: 14px 16px;
+      }
+    }
+  </style>
+</head>
+<body data-page-id="docentes">
+
+<!-- ==========================
+     HEADER con banner
+     ========================== -->
+<header class="site-header" role="banner">
+  <div class="banner-container">
+    <img
+      class="banner-logo"
+      src="https://raw.githubusercontent.com/Prof-Luis1986/recursos-cetis50/refs/heads/main/logo-cetis50.jpg"
+      alt="Logo CETIS 50"
+    />
+    <div class="banner-text">
+      Centro de Estudios Tecnológicos Industrial y de Servicios N.º 50
+    </div>
+  </div>
+</header>
+
+<!-- ==========================
+     MENÚ PRINCIPAL
+     ========================== -->
+<nav class="main-nav" role="navigation" aria-label="Menú principal del sitio">
+  <ul>
+    <li><a href="index.html">Inicio</a></li>
+    <li><a href="oferta.html">Oferta Educativa</a></li>
+    <li><a href="departamentos.html">Departamentos</a></li>
+    <li><a href="alumnos.html">Alumnos</a></li>
+    <li><a href="docentes.html" class="active">Docentes</a></li>
+    <li><a href="eventos.html">Eventos Educativos</a></li>
+    <li><a href="vinculacion.html">Vinculación</a></li>
+    <li><a href="contacto.html">Contacto</a></li>
+  </ul>
+</nav>
+
+<!-- ==========================
+     CONTENIDO PRINCIPAL
+     ========================== -->
+<main class="container card" role="main">
+  <section id="horariosCta" class="horarios-cta hidden" aria-label="Acceso rápido a horarios docentes">
+    <div>
+      <h2>Consulta tu horario personalizado</h2>
+      <p>Ingresa tu RFC en la sección de horarios para descargar e imprimir la distribución oficial de actividades asignada por la Coordinación Académica.</p>
+    </div>
+    <a href="horarios.html">Ir a horarios</a>
+  </section>
+
+  <section id="attendanceCta" class="attendance-cta hidden" aria-label="Pase de asistencia">
+    <div>
+      <h2>Pase de asistencia digital</h2>
+      <p>Registra tus asistencias oficiales directamente en el sistema institucional. Mantén tu control actualizado y evita contratiempos en tus comprobaciones administrativas.</p>
+    </div>
+    <a href="https://siepype.aeidetcdmx.org/sistema_asistencias/vistas/login.php" target="_blank" rel="noopener noreferrer">Pase de asistencia</a>
+  </section>
+  <!-- Vista para NO autenticados / no docentes -->
+  <section id="docentes-acceso" class="center">
+    <h1 class="page-title">Acceso para Docentes</h1>
+    <p style="margin-bottom: 16px; color:#444;">
+      Esta sección es exclusiva para personal docente del CETIS 50.
+      Por favor, inicia sesión con tu cuenta institucional.
+    </p>
+    <button id="loginDocentesBtn" class="btn-primary">
+      Iniciar sesión con Google
+    </button>
+    <p id="docentes-msg" role="status" aria-live="polite"></p>
+  </section>
+
+  <!-- Contenido real para docentes (oculto hasta que verifiquemos) -->
+  <section id="docentes-contenido" class="hidden">
+    <h1 class="page-title">Información para Docentes</h1>
+
+    <p style="margin-bottom: 12px; color:#333;">
+      Bienvenido(a) docente. Aquí encontrarás la información interna, recursos,
+      formatos, comunicados y herramientas útiles para tu labor educativa.
+    </p>
+
+    <section id="turno-resumen" class="turno-summary hidden" aria-live="polite">
+      <h2>Resumen por turno</h2>
+      <p id="turno-resumen-copy">Distribución actual de docentes, grupos y horas por turno operativo.</p>
+      <div id="turno-resumen-grid" class="turno-resumen-grid"></div>
+    </section>
+
+    <section id="docente-loads" class="docente-loads hidden" aria-live="polite">
+      <h2>Clases filtradas</h2>
+      <p>Explora la carga docente en curso filtrando por turno, día o docente. Esta vista permite ubicar rápidamente disponibilidad de aulas y asignaciones.</p>
+      <div class="carga-filter-bar">
+        <select id="cargaTurnoFiltro">
+          <option value="">Todos los turnos</option>
+          <option value="matutino">Turno Matutino</option>
+          <option value="vespertino">Turno Vespertino</option>
+        </select>
+        <select id="cargaDiaFiltro">
+          <option value="">Todos los días</option>
+          <option value="lunes">Lunes</option>
+          <option value="martes">Martes</option>
+          <option value="miercoles">Miércoles</option>
+          <option value="jueves">Jueves</option>
+          <option value="viernes">Viernes</option>
+        </select>
+        <input id="cargaDocenteFiltro" type="search" placeholder="Buscar por docente o asignatura" />
+      </div>
+      <div class="schedule-table-wrapper">
+        <table class="carga-table">
+          <thead>
+            <tr>
+              <th>Docente</th>
+              <th>Turno</th>
+              <th>Día</th>
+              <th>Horario</th>
+              <th>Asignatura</th>
+              <th>Grupo</th>
+              <th>Especialidad</th>
+              <th>Aula</th>
+              <th>Horas</th>
+            </tr>
+          </thead>
+          <tbody id="carga-table-body">
+            <tr><td colspan="9">Sin datos disponibles.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- HORARIO INSTITUCIONAL -->
+    <div style="margin-top: 25px;">
+      <h2 id="inst-title">Horario Institucional CETis 50</h2>
+      <p id="inst-intro" style="color:#555; margin-bottom: 12px;">
+        En este apartado se muestra el horario institucional vigente para el CETis 50.
+      </p>
+
+      <ul id="inst-bullets" style="margin: 1rem 0 1.5rem 1.5rem; color: #333;">
+        <li>Este horario aplica para todos los docentes del plantel.</li>
+        <li>Las horas de entrada y salida deberán respetarse estrictamente.</li>
+        <li>Cualquier modificación será notificada por la Dirección Académica.</li>
+      </ul>
+
+      <div id="inst-note" class="inst-note">
+        Nota: La información aquí mostrada puede ser modificada por la Dirección.
+      </div>
+
+      <div id="inst-cards-container" class="inst-cards-container">
+        <!-- Tarjetas desde Firestore -->
+      </div>
+    </div>
+
+    <div>
+      <h2>Recursos y Formatos</h2>
+      <ul>
+        <li>Formularios de evaluación de desempeño</li>
+        <li>Calendario académico interno</li>
+        <li>Lineamientos y reglamentos docentes</li>
+        <li>Plantillas para planeación didáctica</li>
+        <li>Acceso a plataforma de calificaciones</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2>Comunicados Importantes</h2>
+      <ul>
+        <li>Avisos de reuniones de academia</li>
+        <li>Fechas límite para entrega de documentos</li>
+        <li>Información sobre capacitaciones y talleres</li>
+      </ul>
+    </div>
+
+    <!-- Avisos que vienen de la colección docentesAnnouncements -->
+    <div style="margin-top: 25px;">
+      <h2>Avisos para Docentes</h2>
+      <ul id="lista-docentes-announcements" class="docentes-lista">
+        <li>Las notificaciones aparecerán como burbujas flotantes en la esquina inferior.</li>
+      </ul>
+    </div>
+
+    <div style="margin-top: 22px;">
+      <button id="logoutDocentesBtn" class="btn-primary">
+        Cerrar sesión
+      </button>
+    </div>
+  </section>
+</main>
+
+<!-- ==========================
+     MODAL BURBUJA
+     ========================== -->
+<div id="announcementModal" class="modal modal-burbuja">
+  <div class="modal-content modal-burbuja-content">
+    <button class="close-button" aria-label="Cerrar aviso">&times;</button>
+
+    <article class="announcement-card docentes-card" id="modal-card">
+      <div class="announcement-header">
+        <div class="announcement-tag">
+          <span class="tag-icon">👩‍🏫</span>
+          <span class="tag-text" id="modal-tag-text">DOCENTES</span>
+        </div>
+        <div class="announcement-date" id="modal-date"></div>
+      </div>
+
+      <div class="announcement-body">
+        <h3 class="announcement-title" id="modal-title"></h3>
+        <p class="announcement-content" id="modal-content"></p>
+      </div>
+
+      <div class="announcement-footer" id="modal-chips">
+        <!-- chips de turno y sin expiración se llenan por JS -->
+      </div>
+
+      <div id="modal-link" style="margin-top: 10px;"></div>
+      <div id="modal-video" style="margin-top: 10px;"></div>
+
+      <div class="announcement-logo">
+        <img
+          src="https://raw.githubusercontent.com/Prof-Luis1986/recursos-cetis50/refs/heads/main/logo-cetis50-cuadro.png"
+          alt="CETIS 50"
+        />
+      </div>
+    </article>
+  </div>
+</div>
+
+<!-- ==========================
+     SCRIPTS FIREBASE
+     ========================== -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+  (function() {
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const accesoSection = document.getElementById('docentes-acceso');
+    const contenidoSection = document.getElementById('docentes-contenido');
+    const loginBtn = document.getElementById('loginDocentesBtn');
+    const logoutBtn = document.getElementById('logoutDocentesBtn');
+    const msgEl = document.getElementById('docentes-msg');
+    const horariosCta = document.getElementById('horariosCta');
+    const attendanceCta = document.getElementById('attendanceCta');
+    const turnoResumenSection = document.getElementById('turno-resumen');
+    const turnoResumenGrid = document.getElementById('turno-resumen-grid');
+    const docenteLoadsSection = document.getElementById('docente-loads');
+    const cargaTurnoFiltro = document.getElementById('cargaTurnoFiltro');
+    const cargaDiaFiltro = document.getElementById('cargaDiaFiltro');
+    const cargaDocenteFiltro = document.getElementById('cargaDocenteFiltro');
+    const cargaTableBody = document.getElementById('carga-table-body');
+
+    const DOMINIO_INSTITUCIONAL = 'cetis50cdmx.com';
+
+    // Contenedor lista textual
+    const listaWrap = document.getElementById('lista-docentes-announcements');
+    let clasesCache = [];
+
+    // --- MODAL ---
+    const announcementModal = document.getElementById('announcementModal');
+    const closeButton = document.querySelector('.close-button');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDate = document.getElementById('modal-date');
+    const modalContent = document.getElementById('modal-content');
+    const modalChips = document.getElementById('modal-chips');
+    const modalLink = document.getElementById('modal-link');
+    const modalVideo = document.getElementById('modal-video');
+
+    function openModal(data) {
+      modalTitle.textContent = data.titulo;
+      modalDate.textContent = data.fecha;
+      modalContent.textContent = data.contenido;
+
+      // chips
+      modalChips.innerHTML = '';
+      let turnoLabel = '';
+      if (data.turno.toLowerCase() === 'matutino') turnoLabel = 'Turno matutino';
+      else if (data.turno.toLowerCase() === 'vespertino') turnoLabel = 'Turno vespertino';
+      else turnoLabel = 'Turno: ambos';
+
+      modalChips.innerHTML += `<span class="chip chip-turno">${turnoLabel}</span>`;
+      modalChips.innerHTML += `<span class="chip chip-sin-expiracion">Sin expiración</span>`;
+
+      // enlace
+      modalLink.innerHTML = '';
+      if (data.linkUrl) {
+        modalLink.innerHTML = `
+          <a href="${data.linkUrl}" target="_blank" rel="noopener" class="chip chip-link">
+            🔗 Ir al enlace
+          </a>
+        `;
+      }
+
+      // video youtube
+      modalVideo.innerHTML = '';
+      if (data.linkUrl && data.linkUrl.includes('youtube.com/watch')) {
+        const id = data.linkUrl.split('v=')[1]?.split('&')[0];
+        if (id) {
+          modalVideo.innerHTML = `
+            <div class="video-responsive">
+              <iframe src="https://www.youtube.com/embed/${id}"
+                      frameborder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen></iframe>
+            </div>
+          `;
+        }
+      }
+
+      announcementModal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      announcementModal.style.display = 'none';
+      modalVideo.innerHTML = '';
+    }
+
+    closeButton.addEventListener('click', closeModal);
+    window.addEventListener('click', (e) => {
+      if (e.target === announcementModal) closeModal();
+    });
+
+    function mostrarAcceso(mensaje) {
+      contenidoSection.classList.add('hidden');
+      accesoSection.classList.remove('hidden');
+      horariosCta?.classList.add('hidden');
+      attendanceCta?.classList.add('hidden');
+      if (mensaje) {
+        msgEl.textContent = mensaje;
+        msgEl.style.color = '#9b1d1d';
+      } else {
+        msgEl.textContent = '';
+      }
+    }
+
+    function mostrarContenido() {
+      msgEl.textContent = '';
+      accesoSection.classList.add('hidden');
+      contenidoSection.classList.remove('hidden');
+      horariosCta?.classList.remove('hidden');
+      attendanceCta?.classList.remove('hidden');
+    }
+
+    // --- Verificar permisos docente ---
+    async function verificarPermisosDocente(user) {
+      if (!user || !user.email) {
+        return { permitido: false, mensaje: 'No hay usuario o correo.' };
+      }
+
+      const dominio = user.email.split('@')[1] || '';
+      if (dominio.toLowerCase() !== DOMINIO_INSTITUCIONAL.toLowerCase()) {
+        return {
+          permitido: false,
+          mensaje: `Solo se permite el dominio @${DOMINIO_INSTITUCIONAL}.`
+        };
+      }
+
+      try {
+        const userDocRef = db.collection('users').doc(user.uid);
+        const userDoc = await userDocRef.get();
+
+        if (!userDoc.exists) {
+          await userDocRef.set(
+            {
+              email: user.email,
+              nombre: user.displayName || user.email,
+              esDocente: false,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            },
+            { merge: true }
+          );
+
+          return {
+            permitido: false,
+            mensaje: 'Tu cuenta está pendiente de aprobación como docente.'
+          };
+        }
+
+        const userData = userDoc.data();
+        if (userData.esDocente === true) {
+          return { permitido: true, mensaje: '' };
+        } else {
+          return {
+            permitido: false,
+            mensaje: 'Tu cuenta no está autorizada como docente. Contacta al administrador.'
+          };
+        }
+      } catch (e) {
+        console.error('Error al verificar permisos de docente en Firestore:', e);
+        return { permitido: false, mensaje: 'Error al verificar tus permisos. Intenta de nuevo.' };
+      }
+    }
+
+    // --- HORARIO INSTITUCIONAL ---
+    function renderInstitutionalSchedule(data) {
+      document.getElementById('inst-title').textContent = 
+        data.title || 'Horario Institucional CETis 50';
+      document.getElementById('inst-intro').textContent =
+        data.intro || 'En este apartado se muestra el horario institucional vigente para el CETis 50.';
+
+      const bulletsContainer = document.getElementById('inst-bullets');
+      bulletsContainer.innerHTML = '';
+      if (Array.isArray(data.bullets) && data.bullets.length > 0) {
+        data.bullets.forEach((b) => {
+          const li = document.createElement('li');
+          li.textContent = b;
+          bulletsContainer.appendChild(li);
+        });
+      }
+
+      document.getElementById('inst-note').textContent =
+        data.note || 'Nota: La información aquí mostrada puede ser modificada por la Dirección.';
+
+      const cardsContainer = document.getElementById('inst-cards-container');
+      cardsContainer.innerHTML = '';
+
+      if (Array.isArray(data.cards) && data.cards.length > 0) {
+        data.cards.forEach((card) => {
+          const cardDiv = document.createElement('div');
+          cardDiv.className = 'inst-card';
+
+          const h3 = document.createElement('h3');
+          h3.textContent = card.title || 'Resumen';
+          cardDiv.appendChild(h3);
+
+          if (card.subtitle) {
+            const subtitle = document.createElement('p');
+            subtitle.className = 'inst-card-subtitle';
+            subtitle.textContent = card.subtitle;
+            cardDiv.appendChild(subtitle);
+          }
+
+          if (card.type === 'table' && Array.isArray(card.headers) && Array.isArray(card.rows)) {
+            const table = document.createElement('table');
+            table.className = 'inst-table';
+
+            const thead = document.createElement('thead');
+            const trHead = document.createElement('tr');
+            card.headers.forEach((headText) => {
+              const th = document.createElement('th');
+              th.textContent = headText;
+              trHead.appendChild(th);
+            });
+            thead.appendChild(trHead);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            card.rows.forEach((row) => {
+              const tr = document.createElement('tr');
+              row.forEach((cell) => {
+                const td = document.createElement('td');
+                td.textContent = cell;
+                tr.appendChild(td);
+              });
+              tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            cardDiv.appendChild(table);
+          }
+
+          cardsContainer.appendChild(cardDiv);
+        });
+      } else {
+        const p = document.createElement('p');
+        p.textContent = 'No se ha configurado el horario institucional.';
+        p.style.textAlign = 'center';
+        p.style.color = '#666';
+        cardsContainer.appendChild(p);
+      }
+    }
+
+    async function loadInstitutionalSchedule() {
+      try {
+        const doc = await db.collection('institutionalSchedule').doc('current').get();
+        if (doc.exists) {
+          renderInstitutionalSchedule(doc.data());
+        } else {
+          console.log('No hay horario institucional configurado.');
+        }
+      } catch (error) {
+        console.error('Error al cargar horario institucional:', error);
+      }
+    }
+
+    function normalizeTurno(turno) {
+      const normalized = (turno || '').toLowerCase();
+      if (normalized.includes('matut')) return 'Turno Matutino';
+      if (normalized.includes('vesper')) return 'Turno Vespertino';
+      return 'Turno Mixto';
+    }
+
+    function formatResumenList(items, limit = 4) {
+      const arr = Array.from(items || []);
+      if (!arr.length) return 'Pendiente';
+      const display = arr.slice(0, limit);
+      const extra = arr.length > limit ? ` +${arr.length - limit}` : '';
+      return display.join(', ') + extra;
+    }
+
+    async function loadTurnoResumen() {
+      if (!turnoResumenSection || !turnoResumenGrid) return;
+      try {
+        const snapshot = await db.collection('horarios_docentes').get();
+        if (snapshot.empty) {
+          turnoResumenSection.classList.add('hidden');
+          return;
+        }
+
+        const resumen = {};
+
+        snapshot.forEach(doc => {
+          const data = doc.data() || {};
+          const infoDoc = data.docente || {};
+          const turnoKey = normalizeTurno(infoDoc.turno);
+
+          if (!resumen[turnoKey]) {
+            resumen[turnoKey] = {
+              docentes: new Set(),
+              clases: 0,
+              horas: 0,
+              grupos: new Set(),
+              especialidades: new Set()
+            };
+          }
+
+          const carga = Array.isArray(data.carga_academica) ? data.carga_academica : [];
+          resumen[turnoKey].docentes.add(infoDoc.rfc || doc.id);
+          resumen[turnoKey].clases += carga.length;
+
+          carga.forEach(act => {
+            const horasNum = Number(act.horas);
+            if (!Number.isNaN(horasNum)) resumen[turnoKey].horas += horasNum;
+            if (act.grupo) resumen[turnoKey].grupos.add(act.grupo);
+            if (act.especialidad) resumen[turnoKey].especialidades.add(act.especialidad);
+          });
+        });
+
+        const cardsHtml = Object.entries(resumen)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([turno, info]) => {
+            const especialidades = Array.from(info.especialidades).slice(0, 4);
+            return `
+              <article class="turno-card">
+                <h3>${turno}</h3>
+                <div class="turno-metrics">
+                  <div><strong>${info.docentes.size}</strong><br/>Docentes</div>
+                  <div><strong>${info.clases}</strong><br/>Clases</div>
+                  <div><strong>${info.horas}</strong><br/>Horas</div>
+                </div>
+                <p><strong>Grupos:</strong> ${formatResumenList(info.grupos, 6)}</p>
+                <div class="chip-group">
+                  ${especialidades.length
+                    ? especialidades.map(es => `<span class="chip">${es}</span>`).join('')
+                    : '<span class="chip">Sin especialidades registradas</span>'}
+                </div>
+              </article>
+            `;
+          }).join('');
+
+        turnoResumenGrid.innerHTML = cardsHtml;
+        turnoResumenSection.classList.remove('hidden');
+      } catch (error) {
+        console.error('Error al cargar resumen por turno:', error);
+        turnoResumenSection.classList.add('hidden');
+      }
+    }
+
+    function renderCargaTable(list) {
+      if (!cargaTableBody) return;
+      if (!list.length) {
+        cargaTableBody.innerHTML = '<tr><td colspan="9">No hay clases con los filtros seleccionados.</td></tr>';
+        return;
+      }
+      cargaTableBody.innerHTML = list.map(item => `
+        <tr>
+          <td>${item.docenteNombre}</td>
+          <td>${item.turno}</td>
+          <td>${item.dia}</td>
+          <td>${item.hora}</td>
+          <td>${item.asignatura}</td>
+          <td>${item.grupo}</td>
+          <td>${item.especialidad}</td>
+          <td>${item.aula}</td>
+          <td>${item.horas}</td>
+        </tr>
+      `).join('');
+    }
+
+    function applyCargaFilters() {
+      if (!docenteLoadsSection) return;
+      const turnoVal = (cargaTurnoFiltro?.value || '').toLowerCase();
+      const diaVal = (cargaDiaFiltro?.value || '').toLowerCase();
+      const searchVal = (cargaDocenteFiltro?.value || '').toLowerCase();
+
+      const filtered = clasesCache.filter(item => {
+        const turnoMatch = turnoVal ? item.turno.toLowerCase().includes(turnoVal) : true;
+        const diaMatch = diaVal ? item.dia.toLowerCase() === diaVal : true;
+        const searchMatch = searchVal
+          ? (item.docenteNombre.toLowerCase().includes(searchVal) ||
+             item.asignatura.toLowerCase().includes(searchVal) ||
+             item.grupo.toLowerCase().includes(searchVal))
+          : true;
+        return turnoMatch && diaMatch && searchMatch;
+      });
+
+      renderCargaTable(filtered);
+    }
+
+    async function loadDocenteLoads() {
+      if (!docenteLoadsSection) return;
+      try {
+        const snapshot = await db.collection('horarios_docentes').get();
+        clasesCache = [];
+
+        if (snapshot.empty) {
+          mostrarHorariosEstáticos();
+          return;
+        }
+
+        snapshot.forEach(doc => {
+          const data = doc.data() || {};
+          const docente = data.docente || {};
+          const carga = Array.isArray(data.carga_academica) ? data.carga_academica : [];
+
+          carga.forEach(act => {
+            clasesCache.push({
+              docenteNombre: docente.nombre || docente.rfc || 'Docente',
+              turno: docente.turno || 'Sin turno',
+              dia: (act.dia || '').toString(),
+              hora: `${act.hora_inicio || ''} - ${act.hora_fin || ''}`,
+              asignatura: act.asignatura || '',
+              grupo: act.grupo || '',
+              especialidad: act.especialidad || '',
+              aula: act.salon || 'Por asignar',
+              horas: act.horas ?? ''
+            });
+          });
+        });
+
+        if (!clasesCache.length) {
+          mostrarHorariosEstáticos();
+          return;
+        }
+
+        docenteLoadsSection.classList.remove('hidden');
+        applyCargaFilters();
+      } catch (error) {
+        console.error('Error al cargar clases filtradas:', error);
+        mostrarHorariosEstáticos();
+      }
+    }
+
+    function mostrarHorariosEstáticos() {
+      if (!docenteLoadsSection) return;
+      docenteLoadsSection.classList.remove('hidden');
+      if (cargaTableBody) {
+        cargaTableBody.innerHTML = '<tr><td colspan="9">Pendiente de carga oficial.</td></tr>';
+      }
+
+      if (docenteLoadsSection.querySelector('.inst-note')) return;
+
+      const html = `
+        <div class="inst-note">
+          <strong>Nota:</strong> Aún no se han cargado los horarios definitivos en el sistema.
+          Presentamos los bloques oficiales por turno para referencia.
+        </div>
+        <div class="inst-cards-container">
+          <article class="inst-card">
+            <h3>Turno Matutino (07:00 - 14:00)</h3>
+            <ul>
+              <li><strong>07:00 - 08:50:</strong> Bloque académico</li>
+              <li><strong>08:50 - 09:10:</strong> Receso</li>
+              <li><strong>09:10 - 11:00:</strong> Bloque académico</li>
+              <li><strong>11:10 - 14:00:</strong> Laboratorios / actividades complementarias</li>
+            </ul>
+          </article>
+          <article class="inst-card">
+            <h3>Turno Vespertino (14:00 - 21:00)</h3>
+            <ul>
+              <li><strong>14:00 - 15:40:</strong> Bloque académico</li>
+              <li><strong>15:40 - 16:00:</strong> Receso</li>
+              <li><strong>16:00 - 18:00:</strong> Bloque académico</li>
+              <li><strong>18:10 - 21:00:</strong> Prácticas / tutorías</li>
+            </ul>
+          </article>
+        </div>
+      `;
+      docenteLoadsSection.insertAdjacentHTML('beforeend', html);
+    }
+
+    // --- Drag & drop básico para las burbujas ---
+    function makeDraggable(el) {
+      let offsetX = 0, offsetY = 0, isDown = false;
+
+      el.addEventListener('mousedown', (e) => {
+        isDown = true;
+        el.classList.add('dragging');
+        offsetX = e.clientX - el.getBoundingClientRect().left;
+        offsetY = e.clientY - el.getBoundingClientRect().top;
+        e.preventDefault();
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        const x = e.clientX - offsetX;
+        const y = e.clientY - offsetY;
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.bottom = 'auto';
+        el.style.right = 'auto';
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isDown) {
+          isDown = false;
+          el.classList.remove('dragging');
+        }
+      });
+    }
+
+    // --- Crear burbuja flotante para un aviso ---
+    function crearBurbujaFlotante(info, index) {
+      const bubble = document.createElement('div');
+      bubble.className = 'docentes-bubble';
+
+      bubble.innerHTML = `
+        <button class="bubble-close" aria-label="Cerrar notificación">&times;</button>
+        <div class="bubble-tag">👩‍🏫 DOCENTES</div>
+        <div class="bubble-title">${info.titulo}</div>
+        <div class="bubble-meta">${info.fecha} · ${info.turno}</div>
+      `;
+
+      const offset = index * 80;
+      bubble.style.bottom = (20 + offset) + 'px';
+      bubble.style.right = '20px';
+
+      bubble.addEventListener('click', (e) => {
+        if (e.target.closest('.bubble-close')) return;
+        openModal(info);
+      });
+
+      bubble.querySelector('.bubble-close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        bubble.remove();
+      });
+
+      makeDraggable(bubble);
+
+      document.body.appendChild(bubble);
+    }
+
+    // --- Cargar avisos como burbujas flotantes ---
+    async function cargarAvisosDocentes() {
+      if (listaWrap) {
+        listaWrap.innerHTML = '<li>Las notificaciones aparecerán en la esquina inferior.</li>';
+      }
+
+      try {
+        const snapshot = await db
+          .collection('docentesAnnouncements')
+          .orderBy('createdAt', 'desc')
+          .limit(5)
+          .get();
+
+        if (snapshot.empty) {
+          return;
+        }
+
+        let index = 0;
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const titulo    = data.titulo    || data.title   || 'Sin título';
+          const contenido = data.contenido || data.body    || data.content || '';
+          const turno     = data.turno     || 'ambos';
+          const linkUrl   = data.linkUrl   || data.enlace  || '';
+          const fechaObj  = data.createdAt && data.createdAt.toDate ? data.createdAt.toDate() : null;
+          const fechaText = fechaObj
+            ? fechaObj.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
+            : '';
+
+          const info = { titulo, contenido, turno, linkUrl, fecha: fechaText };
+          crearBurbujaFlotante(info, index);
+          index++;
+        });
+      } catch (e) {
+        console.error('Error al cargar avisos de docentesAnnouncements:', e);
+      }
+    }
+
+    // --- Auth state ---
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        mostrarAcceso();
+        return;
+      }
+
+      const { permitido, mensaje } = await verificarPermisosDocente(user);
+      if (permitido) {
+        mostrarContenido();
+        loadInstitutionalSchedule();
+        loadTurnoResumen();
+        loadDocenteLoads();
+        cargarAvisosDocentes();
+        cargaTurnoFiltro?.addEventListener('change', applyCargaFilters);
+        cargaDiaFiltro?.addEventListener('change', applyCargaFilters);
+        cargaDocenteFiltro?.addEventListener('input', () => {
+          applyCargaFilters();
+        });
+      } else {
+        mostrarAcceso(mensaje);
+      }
+    });
+
+    // Login
+    loginBtn.addEventListener('click', async () => {
+      msgEl.textContent = '';
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+      } catch (err) {
+        console.error('Error al iniciar sesión:', err);
+        msgEl.textContent =
+          'Error al iniciar sesión: ' + (err.message || 'Verifica tu conexión.');
+        msgEl.style.color = '#9b1d1d';
+      }
+    });
+
+    // Logout
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await auth.signOut();
+      } catch (err) {
+        console.error('Error al cerrar sesión:', err);
+        msgEl.textContent = 'Error al cerrar sesión.';
+        msgEl.style.color = '#9b1d1d';
+      }
+    });
+  })();
+</script>
+</body>
+</html>

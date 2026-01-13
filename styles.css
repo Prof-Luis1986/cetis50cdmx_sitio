@@ -1,0 +1,449 @@
+/* styles.css - CETIS 50 (completo)
+   - Logo pegado al borde izquierdo
+   - Texto del banner en UNA SOLA LÍNEA, centrado dentro del espacio disponible y más grande
+   - Menú en una sola fila con scroll horizontal en móviles (BOTONES MÁS COMPACTOS)
+   - Sección "Oferta Educativa" con video a la izquierda y texto a la derecha (apila en móvil)
+   - Paleta: vino / blanco / rojo oscuro
+   - Burbujas flotantes arrastrables para Docentes
+*/
+
+/* =========================
+   Variables
+   ========================= */
+:root{
+  --vino-900: #3a0b10;
+  --vino-800: #581321;
+  --vino-700: #7a1e29;
+  --vino-600: #9b2f36;
+  --vino-500: #b63b44;
+  --blanco: #ffffff;
+  --gris-claro: #f5f5f5;
+  --card-radius: 12px;
+  --max-width: 1100px;
+}
+
+/* =========================
+   Reset / base
+   ========================= */
+*{ box-sizing: border-box; margin:0; padding:0; }
+html,body{ height:100%; }
+body{
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  background: linear-gradient(180deg, var(--vino-800), #401017 85%);
+  color: var(--blanco);
+  min-height: 100vh;
+  padding: 24px 18px;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* Links */
+a { color: inherit; }
+
+/* =========================
+   HEADER / BANNER (full-bleed)
+   ========================= */
+/* Full-bleed header container */
+.site-header {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  background-color: var(--vino-800);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  padding: 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  height: 160px; /* altura generosa para texto grande */
+  z-index: 60;
+  box-sizing: border-box;
+}
+
+/* Contenedor centrado para el contenido dentro del header */
+.banner-container {
+  max-width: var(--max-width);
+  width: 100%;
+  display: flex;
+  align-items: center;           /* centra verticalmente logo y texto */
+  gap: 18px;
+  padding: 0 18px 0 0;          /* sin padding-left para acercar logo al borde */
+  box-sizing: border-box;
+  justify-content: flex-start;
+  margin-left: 0;
+}
+
+/* Logo: visualmente pegado a la izquierda del viewport */
+.banner-logo {
+  height: 120px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  flex-shrink: 0;
+  margin-left: 8px; /* ligero espacio para que no choque con el borde del navegador */
+}
+
+/* Texto del banner:
+   - UNA SOLA LÍNEA en escritorio
+   - mayor tamaño
+   - centrado dentro del espacio disponible
+*/
+.banner-text {
+  color: var(--blanco);
+  font-weight: 900;
+  font-size: 1.8rem;             /* tamaño aumentado */
+  line-height: 1;
+  white-space: nowrap;           /* UNA SOLA LÍNEA */
+  overflow: hidden;
+  text-overflow: ellipsis;      /* "..." si no cabe */
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  user-select: none;
+  padding-right: 18px;
+  margin-left: 8px;
+  flex-grow: 1;                  /* ocupa el espacio disponible */
+  display: flex;
+  align-items: center;           /* centra verticalmente el texto dentro de su caja */
+  justify-content: center;       /* centra horizontalmente el texto dentro del área disponible */
+  text-align: center;
+}
+
+/* =========================
+   NAV - Menú principal (BOTONES MÁS COMPACTOS)
+   ========================= */
+.main-nav{
+  max-width: var(--max-width);
+  margin: 12px auto 22px auto;
+  padding: 6px 10px;
+  display:flex;
+  justify-content:center;
+  background: transparent;
+  position: relative;
+  z-index: 50;
+}
+
+.main-nav ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: nowrap;            /* no envolver */
+  gap: 10px;                    /* gap reducido */
+  justify-content: center;
+  align-items: center;
+  padding: 0 8px;
+  overflow-x: auto;            /* permite scroll horizontal en pantallas pequeñas */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* Apariencia de scrollbar (WebKit) */
+.main-nav ul::-webkit-scrollbar{ height:6px; }
+.main-nav ul::-webkit-scrollbar-thumb{ background: rgba(0,0,0,0.2); border-radius: 10px; }
+
+.main-nav ul li a {
+  color: var(--blanco);
+  text-decoration: none;
+  font-weight: 600;                     /* menos grueso */
+  padding: 6px 10px;                    /* MENOS padding = botón más chico */
+  border-radius: 8px;                   /* menos redondo */
+  background-color: rgba(255,255,255,0.06);
+  transition: background-color 0.18s ease, transform 0.12s ease, box-shadow 0.12s ease;
+  white-space: nowrap;
+  display: inline-block;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.16); /* menos sombra */
+  font-size: 0.95rem;                   /* fuente un pelín más chica */
+}
+.main-nav ul li a:hover,
+.main-nav ul li a:focus {
+  background-color: rgba(255,255,255,0.16);
+  transform: translateY(-1px);          /* hover más sutil */
+  outline: none;
+}
+.main-nav ul li a.active {
+  background-color: var(--vino-500);
+  color: var(--blanco);
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.18), 0 5px 14px rgba(0,0,0,0.26);
+  transform: none;
+}
+.main-nav ul li { flex: 0 0 auto; }
+
+/* =========================
+   Contenido principal (cards, layout)
+   ========================= */
+.container{ max-width: var(--max-width); margin: 0 auto; padding: 0 12px; }
+.card{
+  background: var(--blanco);
+  color: var(--vino-700);
+  border-radius: var(--card-radius);
+  padding: 26px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+.page-title{
+  font-size: 1.7rem;
+  text-align:center;
+  color: var(--vino-700);
+  margin-bottom: 18px;
+}
+
+.controls{ display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap; margin-bottom:18px; }
+.controls label{ font-weight:700; color:var(--vino-700); }
+.controls input[type="search"]{ margin-left:8px; padding:8px 10px; border-radius:8px; border:1px solid #ddd; min-width:220px; font-size:0.98rem; }
+
+.announcements-list{ display:grid; gap:14px; margin-top:6px; }
+.announcement{ background: linear-gradient(180deg, var(--vino-700), var(--vino-500)); color: var(--blanco); padding:14px; border-radius:10px; box-shadow: 0 6px 14px rgba(0,0,0,0.12); display:flex; gap:12px; align-items:flex-start; flex-direction:column; }
+.announcement h4{ margin:0 0 6px 0; font-size:1.06rem; }
+.announcement p{ margin:0 0 8px 0; line-height:1.45; }
+.announcement small{ opacity:0.95; font-size:0.9rem; }
+.announcement-image{ max-width:100%; height:auto; border-radius:8px; margin-bottom:8px; }
+.external-link{ display:inline-block; margin-top:8px; color:var(--vino-900); background:var(--blanco); padding:8px 12px; border-radius:8px; text-decoration:none; font-weight:700; }
+.external-link:hover{ background:#f0f0f0; color:var(--vino-700); }
+
+.no-announcements{ text-align:center; color:#666; padding:20px; font-weight:700; }
+.footer-note{ margin-top:18px; color:#555; text-align:center; font-size:0.95rem; }
+
+/* =========================
+   OFERTA EDUCATIVA - especialidades (video izquierda, texto derecha)
+   ========================= */
+.specialties {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-top: 10px;
+}
+
+/* Card por cada especialidad */
+.specialty {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  background: var(--blanco);
+  color: var(--vino-700);
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+/* Media (video) a la izquierda */
+.specialty-media {
+  flex: 0 0 420px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.specialty-media video {
+  width:100%;
+  height:auto;
+  border-radius:10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  background: #000;
+}
+
+/* Texto a la derecha */
+.specialty-info {
+  flex: 1 1 auto;
+  padding-right:8px;
+}
+.specialty-info h2{
+  margin:0 0 8px 0;
+  color: var(--vino-700);
+  font-size:1.25rem;
+}
+.specialty-info p{
+  margin:0 0 8px 0;
+  line-height:1.45;
+  color: #333;
+}
+.specialty-info ul{
+  margin:8px 0 0 18px;
+  color: #333;
+  list-style: disc;
+}
+
+/* Ajustes visuales para texto dentro de card blanca */
+.specialty .specialty-info a { color: var(--vino-600); text-decoration: underline; }
+
+/* =========================
+   Modal
+   ========================= */
+.modal-overlay{ position:fixed; inset:0; background: rgba(40, 10, 15, 0.78); display:flex; align-items:center; justify-content:center; z-index:2000; padding: 24px; }
+.modal-content{ width:100%; max-width:700px; background:var(--blanco); color:var(--vino-700); border-radius:10px; padding:26px 30px; box-shadow: 0 12px 36px rgba(0,0,0,0.36); position:relative; line-height:1.5; }
+.modal-content h2{ text-align:center; color:var(--vino-700); margin-bottom:14px; font-size:1.35rem; letter-spacing: 0.6px; font-weight:800; }
+.modal-close{ position:absolute; right:14px; top:12px; background:transparent; border:none; color:var(--vino-700); font-size:22px; cursor:pointer; }
+
+.btn-primary{ background-color: var(--vino-700); color: var(--blanco); padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:700; display:inline-block; }
+.btn-primary:hover{ background-color: var(--vino-500); }
+
+.tag { display: inline-block; background: rgba(255,255,255,0.12); color: #fff; padding: 4px 8px; border-radius: 999px; font-size: 0.8rem; margin-left: 6px; font-weight:700; }
+
+/* =========================
+   Burbujas flotantes para Docentes
+   ========================= */
+.docentes-bubble {
+  position: fixed;
+  z-index: 1100;
+  min-width: 260px;
+  max-width: 320px;
+  padding: 10px 14px 12px 14px;
+  background: linear-gradient(135deg, #a1252f, #44162b);
+  color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+  cursor: grab;
+  font-size: 0.9rem;
+  user-select: none;
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+.docentes-bubble.dragging {
+  cursor: grabbing;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.45);
+  transform: scale(1.01);
+}
+
+.bubble-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  background: transparent;
+  border: none;
+  color: #ffdede;
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bubble-close:hover {
+  color: #ffffff;
+}
+
+.bubble-tag {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+
+.bubble-title {
+  font-weight: 700;
+  font-size: 0.96rem;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+.bubble-meta {
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+
+/* =========================
+   Responsive
+   ========================= */
+@media (max-width: 1100px) {
+  .banner-text { font-size: 1.6rem; }
+  .banner-logo { height: 110px; }
+  .site-header { height: 140px; }
+  .specialty-media { flex: 0 0 360px; }
+}
+
+@media (max-width: 900px) {
+  .banner-text { font-size: 1.4rem; }
+  .banner-logo { height: 96px; }
+  .site-header { height: 130px; }
+  .banner-container { padding-right: 12px; }
+
+  .specialty { gap: 14px; }
+  .specialty-media { flex: 0 0 320px; }
+}
+
+@media (max-width: 700px) {
+  body { padding: 18px 12px; }
+
+  /* en móvil el logo arriba y el texto centrado debajo (múltiples líneas permitidas) */
+  .site-header {
+    height: auto;
+    padding: 12px 0;
+  }
+  .banner-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    justify-content: center;
+  }
+  .banner-logo { height: 72px; margin-left: 0; }
+  .banner-text{
+    font-size: 1.05rem;
+    white-space: normal;    /* permite varias líneas en móvil */
+    text-align: center;
+    overflow: visible;
+    justify-content: center;
+  }
+
+  /* Menú más compacto y scroll mejorado */
+  .main-nav {
+    margin-bottom: 12px;
+    padding: 4px 0;
+  }
+  .main-nav ul {
+    gap: 8px;
+    padding-bottom: 6px;
+    justify-content: flex-start;     /* empieza desde la izquierda */
+    width: 100%;                     /* ocupa todo el ancho */
+  }
+  .main-nav ul li a {
+    padding: 6px 10px;      /* igual que en escritorio */
+    font-size: 0.9rem;      /* un poquito más chico en móvil */
+  }
+
+  /* Oferta: apilar */
+  .specialty { flex-direction: column; align-items: stretch; }
+  .specialty-media { flex: 0 0 auto; width: 100%; }
+  .specialty-media video { width: 100%; height: auto; }
+  .specialty-info { padding-top: 10px; }
+
+  /* Burbujas más pequeñas en móvil */
+  .docentes-bubble {
+    min-width: 220px;
+    max-width: 280px;
+    padding: 8px 12px 10px 12px;
+    font-size: 0.85rem;
+  }
+  .bubble-title {
+    font-size: 0.9rem;
+  }
+  .bubble-meta {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .banner-logo{ height: 56px; }
+  .banner-text{ font-size: 0.95rem; }
+  .site-header{ padding: 8px 0; }
+  .specialty-media { padding: 0 8px; }
+  
+  /* Menú aún más compacto en pantallas muy pequeñas */
+  .main-nav ul li a {
+    padding: 5px 8px;
+    font-size: 0.85rem;
+  }
+
+  /* Burbujas aún más compactas en pantallas muy pequeñas */
+  .docentes-bubble {
+    min-width: 200px;
+    max-width: 240px;
+    bottom: 10px !important;
+    right: 10px !important;
+  }
+}
+
+/* Utility helpers */
+.hidden { display:none !important; }
+.center { text-align:center; }

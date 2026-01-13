@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Boletas: solo consulta cada alumno verificado del dominio institucional
+    match /boletas/{numeroControl} {
+      allow get: if isAlumno() && request.auth.token.email_verified;
+      allow list: if false;
+      allow write: if false;
+    }
+
+    // Horarios docentes: accesibles para docentes y directivos del dominio
+    match /horarios_docentes/{docId} {
+      allow read: if isDocente() || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Avisos internos para docentes
+    match /docentesAnnouncements/{docId} {
+      allow read: if isDocente() || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Avisos públicos (alumnos y visitantes)
+    match /announcements/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Ejemplo para usuarios/admins
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if isAdmin();
+    }
+
+    function isAlumno() {
+      return request.auth != null &&
+        request.auth.token.email.matches('.*@cetis50cdmx\\.com$');
+    }
+
+    function isDocente() {
+      return request.auth != null &&
+        request.auth.token.email.matches('.*@cetis50cdmx\\.com$') &&
+        (request.auth.token.role == 'docente' ||
+         request.auth.token.isDocente == true);
+    }
+
+    function isAdmin() {
+      return request.auth != null &&
+        (request.auth.token.role == 'admin' ||
+         request.auth.token.isAdmin == true);
+    }
+  }
+}
