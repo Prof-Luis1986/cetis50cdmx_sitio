@@ -306,6 +306,89 @@ a { color: inherit; }
   .carousel-caption { font-size: 0.95rem; }
   .carousel-track { height: min(70vw, 360px); }
 }
+
+/* =========================
+   Departamentos
+   ========================= */
+.dept-intro {
+  text-align: center;
+  margin-bottom: 22px;
+  color: #6a1b22;
+  font-weight: 600;
+}
+
+.dept-list {
+  display: grid;
+  gap: 22px;
+}
+
+.dept-card {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr;
+  gap: 18px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+  padding: 18px;
+  color: var(--vino-700);
+}
+
+.dept-media {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f1e7e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(122, 30, 41, 0.2);
+}
+
+.dept-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.dept-media--placeholder {
+  background: linear-gradient(135deg, #f8f0f1, #f1e1e3);
+}
+
+.dept-placeholder {
+  font-weight: 700;
+  color: #8a3b41;
+  text-align: center;
+  padding: 8px;
+}
+
+.dept-body h2 {
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+  color: var(--vino-700);
+}
+
+.dept-body ol {
+  padding-left: 20px;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  color: #5b1a23;
+}
+
+.dept-body li {
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .dept-card {
+    grid-template-columns: 1fr;
+  }
+  .dept-media {
+    aspect-ratio: 16 / 9;
+  }
+}
 .external-link:hover{ background:#f0f0f0; color:var(--vino-700); }
 
 .no-announcements{ text-align:center; color:#666; padding:20px; font-weight:700; }
