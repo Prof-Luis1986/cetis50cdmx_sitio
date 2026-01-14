@@ -445,6 +445,95 @@
       </blockquote>
     </section>
 
+    <section class="carousel-section" aria-label="Carrusel de momentos educativos">
+      <div class="carousel-header">
+        <h2>Momentos que inspiran</h2>
+        <p>La educación transforma vidas. Celebramos a nuestros alumnos y el esfuerzo de cada día.</p>
+      </div>
+
+      <div class="carousel" data-carousel>
+        <div class="carousel-track">
+          <figure class="carousel-slide is-active">
+            <img src="0.PNG" alt="La educación abre puertas y construye futuros." />
+            <figcaption class="carousel-caption">La educación abre puertas y construye futuros.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="1.JPG" alt="Cada estudiante es una historia de esfuerzo y esperanza." />
+            <figcaption class="carousel-caption">Cada estudiante es una historia de esfuerzo y esperanza.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="2.jpg" alt="El aula es el primer laboratorio de sueños." />
+            <figcaption class="carousel-caption">El aula es el primer laboratorio de sueños.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="3.JPG" alt="Aquí crecen habilidades y también valores." />
+            <figcaption class="carousel-caption">Aquí crecen habilidades y también valores.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="4.JPG" alt="Aprender hoy transforma el mañana." />
+            <figcaption class="carousel-caption">Aprender hoy transforma el mañana.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="5.jpg" alt="Nuestros alumnos son el corazón del CETIS 50." />
+            <figcaption class="carousel-caption">Nuestros alumnos son el corazón del CETIS 50.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="6.JPG" alt="La curiosidad es el motor de la ciencia." />
+            <figcaption class="carousel-caption">La curiosidad es el motor de la ciencia.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="7.jpg" alt="El trabajo en equipo hace grande a nuestra comunidad." />
+            <figcaption class="carousel-caption">El trabajo en equipo hace grande a nuestra comunidad.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="8.JPG" alt="Formamos técnicos con visión humana." />
+            <figcaption class="carousel-caption">Formamos técnicos con visión humana.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="9.JPG" alt="El respeto y la disciplina nos guían." />
+            <figcaption class="carousel-caption">El respeto y la disciplina nos guían.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="10.jpg" alt="Innovar es atreverse a mejorar." />
+            <figcaption class="carousel-caption">Innovar es atreverse a mejorar.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="11.jpg" alt="Cada proyecto es un paso hacia la excelencia." />
+            <figcaption class="carousel-caption">Cada proyecto es un paso hacia la excelencia.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="12.jpg" alt="El talento se fortalece con práctica." />
+            <figcaption class="carousel-caption">El talento se fortalece con práctica.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="13.JPG" alt="Crecer juntos nos hace más fuertes." />
+            <figcaption class="carousel-caption">Crecer juntos nos hace más fuertes.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="14.JPG" alt="La tecnología al servicio de la sociedad." />
+            <figcaption class="carousel-caption">La tecnología al servicio de la sociedad.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="15.JPG" alt="La constancia convierte metas en logros." />
+            <figcaption class="carousel-caption">La constancia convierte metas en logros.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="16.JPG" alt="Aprender a servir también es aprender a liderar." />
+            <figcaption class="carousel-caption">Aprender a servir también es aprender a liderar.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="17.JPG" alt="Celebramos el esfuerzo de cada alumno." />
+            <figcaption class="carousel-caption">Celebramos el esfuerzo de cada alumno.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="18.JPG" alt="Orgullo CETIS 50: educación con propósito." />
+            <figcaption class="carousel-caption">Orgullo CETIS 50: educación con propósito.</figcaption>
+          </figure>
+        </div>
+        <button class="carousel-toggle" type="button" aria-pressed="false">Pausar</button>
+      </div>
+    </section>
+
     <!-- Controles: búsqueda -->
     <section class="controls" aria-label="Controles de búsqueda">
       <label>
@@ -1220,6 +1309,60 @@
     // Inicialización
     window.addEventListener('DOMContentLoaded', () => {
       mostrarFraseDelDia();
+
+      const carousel = document.querySelector('[data-carousel]');
+      if (carousel) {
+        const slides = Array.from(carousel.querySelectorAll('.carousel-slide'));
+        const toggleBtn = carousel.querySelector('.carousel-toggle');
+        let currentIndex = 0;
+        let intervalId = null;
+        const intervalMs = 5000;
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const showSlide = (index) => {
+          slides.forEach((slide, i) => {
+            slide.classList.toggle('is-active', i === index);
+          });
+        };
+
+        const nextSlide = () => {
+          currentIndex = (currentIndex + 1) % slides.length;
+          showSlide(currentIndex);
+        };
+
+        const startAuto = () => {
+          if (intervalId || slides.length < 2) return;
+          intervalId = window.setInterval(nextSlide, intervalMs);
+          if (toggleBtn) {
+            toggleBtn.textContent = 'Pausar';
+            toggleBtn.setAttribute('aria-pressed', 'false');
+          }
+        };
+
+        const stopAuto = () => {
+          if (!intervalId) return;
+          window.clearInterval(intervalId);
+          intervalId = null;
+          if (toggleBtn) {
+            toggleBtn.textContent = 'Reanudar';
+            toggleBtn.setAttribute('aria-pressed', 'true');
+          }
+        };
+
+        showSlide(currentIndex);
+        if (!prefersReduced) startAuto();
+        else if (toggleBtn) {
+          toggleBtn.textContent = 'Reanudar';
+          toggleBtn.setAttribute('aria-pressed', 'true');
+        }
+
+        if (toggleBtn) {
+          toggleBtn.addEventListener('click', () => {
+            if (intervalId) stopAuto();
+            else startAuto();
+          });
+        }
+      }
 
       iniciarSuscripcionAvisos(200);
 
