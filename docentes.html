@@ -209,6 +209,52 @@
       }
     }
 
+    .programas-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      margin: 18px 0 24px 0;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #f6eee9, #f4d7c5);
+      color: #5d1620;
+      box-shadow: 0 12px 26px rgba(0,0,0,0.15);
+      border: 1px solid rgba(93,22,32,0.12);
+    }
+    .programas-cta h2 {
+      margin: 0 0 6px 0;
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+    .programas-cta p {
+      margin: 0;
+      max-width: 560px;
+      line-height: 1.45;
+      color: #5d1620;
+    }
+    .programas-cta a {
+      background: #7a1e29;
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .programas-cta a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.35);
+    }
+    @media (max-width: 640px) {
+      .programas-cta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
     .turno-summary {
       margin-top: 28px;
       padding: 18px 20px;
@@ -590,6 +636,14 @@
       Bienvenido(a) docente. Aquí encontrarás la información interna, recursos,
       formatos, comunicados y herramientas útiles para tu labor educativa.
     </p>
+
+    <section class="programas-cta" aria-label="Acceso temporal a programas de especialidad">
+      <div>
+        <h2>Programas de especialidad (acceso temporal)</h2>
+        <p>Enlace momentáneo para apoyar a los docentes de especialidad con los nuevos programas que aún no están en la plataforma oficial.</p>
+      </div>
+      <a href="https://prof-luis1986.github.io/CE50_ProPlanea/" target="_blank" rel="noopener noreferrer">Abrir ProPlanea</a>
+    </section>
 
     <section id="turno-resumen" class="turno-summary hidden" aria-live="polite">
       <h2>Resumen por turno</h2>
