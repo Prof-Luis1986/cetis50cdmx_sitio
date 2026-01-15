@@ -309,6 +309,86 @@ a { color: inherit; }
 }
 
 /* =========================
+   Efemérides
+   ========================= */
+.efemerides-section {
+  margin: 18px 0 8px 0;
+}
+
+.efemerides-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f6ecee 100%);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+  border: 1px solid rgba(122, 30, 41, 0.12);
+  color: var(--vino-700);
+}
+
+.efemerides-date {
+  font-weight: 800;
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+
+.efemerides-title {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8a2e37;
+  margin-bottom: 6px;
+}
+
+.efemerides-content {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #5b1a23;
+  display: block;
+}
+
+.efemerides-badge {
+  background: #7a1e29;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.efemerides-items {
+  display: grid;
+  gap: 10px;
+}
+
+.efemerides-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  background: rgba(122, 30, 41, 0.06);
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(122, 30, 41, 0.12);
+}
+
+.efemerides-type {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(122, 30, 41, 0.12);
+  color: #7a1e29;
+  font-weight: 700;
+  text-transform: capitalize;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+.efemerides-text {
+  color: #5b1a23;
+  font-size: 1rem;
+}
+
+/* =========================
    Departamentos
    ========================= */
 .dept-intro {

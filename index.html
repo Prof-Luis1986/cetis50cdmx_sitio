@@ -445,6 +445,14 @@
       </blockquote>
     </section>
 
+    <section class="efemerides-section" aria-label="Fecha de hoy y efeméride">
+      <div class="efemerides-card">
+        <div class="efemerides-date" id="efemerides-date"></div>
+        <div class="efemerides-title">Efeméride del día</div>
+        <div class="efemerides-content" id="efemerides-content" style="display:none;"></div>
+      </div>
+    </section>
+
     <section class="carousel-section" aria-label="Carrusel de momentos educativos">
       <div class="carousel-header">
         <h2>Momentos que inspiran</h2>
@@ -1327,6 +1335,83 @@
     // Inicialización
     window.addEventListener('DOMContentLoaded', () => {
       mostrarFraseDelDia();
+
+      const dateEl = document.getElementById('efemerides-date');
+      const contentEl = document.getElementById('efemerides-content');
+      const hoy = new Date();
+      const fechaTexto = new Intl.DateTimeFormat('es-MX', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).format(hoy);
+      if (dateEl) dateEl.textContent = `Hoy es ${fechaTexto}`;
+
+      const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+      const dd = String(hoy.getDate()).padStart(2, '0');
+      const clave = `${mm}-${dd}`;
+      fetch('data/efemerides_mx.json')
+        .then(res => res.ok ? res.json() : Promise.reject(new Error('No se pudo cargar efemérides')))
+        .then(db => {
+          if (!contentEl) return;
+          const eventoMundial = db && db.eventos_mundiales ? db.eventos_mundiales[clave] : null;
+          const eventoMx = db && db.mexico_educacion_tecnica && db.mexico_educacion_tecnica.efemerides_fecha_exacta
+            ? db.mexico_educacion_tecnica.efemerides_fecha_exacta[clave]
+            : null;
+          let item = eventoMundial || eventoMx;
+
+          if (!item) {
+            const timeline = db && db.mexico_educacion_tecnica
+              ? db.mexico_educacion_tecnica.linea_del_tiempo_por_anio
+              : [];
+            if (Array.isArray(timeline) && timeline.length) {
+              const storageKey = 'efemerides_mx_timeline_rotacion';
+              const todayKey = `${hoy.getFullYear()}-${mm}-${dd}`;
+              let state = { date: todayKey, index: 0 };
+              try {
+                const saved = JSON.parse(localStorage.getItem(storageKey));
+                if (saved && typeof saved.index === 'number') {
+                  state = saved;
+                }
+              } catch (e) {}
+              if (state.date !== todayKey) {
+                state.index = (state.index + 1) % timeline.length;
+                state.date = todayKey;
+              }
+              localStorage.setItem(storageKey, JSON.stringify(state));
+              const entry = timeline[state.index];
+              item = {
+                categoria: entry.categoria || 'Historia',
+                titulo: entry.titulo || '',
+                texto_largo: entry.descripcion || '',
+                anio: entry.anio || ''
+              };
+            }
+          }
+
+          if (item) {
+            const categoria = item.categoria || 'Efeméride';
+            const anioText = item.anio ? `${item.anio} — ` : '';
+            const titulo = item.titulo ? `${item.titulo}. ` : '';
+            const texto = item.texto_largo || item.texto_corto || '';
+            contentEl.innerHTML = `
+              <div class="efemerides-items">
+                <div class="efemerides-item">
+                  <span class="efemerides-type">${categoria}</span>
+                  <span class="efemerides-text">${anioText}${titulo}${texto}</span>
+                </div>
+              </div>
+            `;
+          } else {
+            contentEl.textContent = 'Sin efemérides registradas para hoy.';
+          }
+          contentEl.style.display = 'block';
+        })
+        .catch(() => {
+          if (!contentEl) return;
+          contentEl.textContent = 'Sin efemérides registradas para hoy.';
+          contentEl.style.display = 'block';
+        });
 
       const carousel = document.querySelector('[data-carousel]');
       if (carousel) {

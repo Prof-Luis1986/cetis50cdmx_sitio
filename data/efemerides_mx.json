@@ -1,0 +1,544 @@
+{
+  "version": "final-1.0",
+  "formato_fecha": "MM-DD",
+  "timezone_sugerida": "America/Mexico_City",
+  "uso_recomendado": {
+    "efemeride_del_dia": "Busca primero en eventos_mundiales[MM-DD], luego en mexico_educacion_tecnica.efemerides_fecha_exacta[MM-DD]. Si no existe, usa un tema rotativo.",
+    "seccion_historia": "Muestra mexico_educacion_tecnica.linea_del_tiempo_por_anio como cronología."
+  },
+  "temas_rotativos": [
+    {
+      "id": "tema_pc",
+      "categoria": "Computación",
+      "titulo": "Pensamiento computacional",
+      "descripcion": "Descomposición de problemas, patrones, abstracción y algoritmos."
+    },
+    {
+      "id": "tema_oss",
+      "categoria": "Software",
+      "titulo": "Código abierto",
+      "descripcion": "Colaboración, licencias y comunidades que impulsan innovación."
+    },
+    {
+      "id": "tema_ciber",
+      "categoria": "Ciberseguridad",
+      "titulo": "Seguridad digital básica",
+      "descripcion": "Contraseñas fuertes, 2FA, phishing y buenas prácticas."
+    },
+    {
+      "id": "tema_redes",
+      "categoria": "Redes",
+      "titulo": "Internet y redes",
+      "descripcion": "Cómo viajan los datos: IP, DNS, routers y latencia."
+    },
+    {
+      "id": "tema_datos",
+      "categoria": "Datos",
+      "titulo": "Datos y bases de datos",
+      "descripcion": "Modelado, SQL/NoSQL, calidad de datos y análisis."
+    },
+    {
+      "id": "tema_ia",
+      "categoria": "Inteligencia Artificial",
+      "titulo": "IA y aprendizaje automático",
+      "descripcion": "Modelos, entrenamiento, evaluación y usos responsables."
+    },
+    {
+      "id": "tema_elec",
+      "categoria": "Electrónica",
+      "titulo": "Electrónica digital",
+      "descripcion": "Señales, lógica, compuertas y circuitos integrados."
+    },
+    {
+      "id": "tema_mcu",
+      "categoria": "Maker / IoT",
+      "titulo": "Microcontroladores",
+      "descripcion": "Sensores, actuadores y prototipos con Arduino/ESP32."
+    },
+    {
+      "id": "tema_robot",
+      "categoria": "Robótica",
+      "titulo": "Robótica",
+      "descripcion": "Control, percepción, movimiento y automatización."
+    },
+    {
+      "id": "tema_nube",
+      "categoria": "Infraestructura",
+      "titulo": "Computación en la nube",
+      "descripcion": "Servicios, escalabilidad, almacenamiento y despliegue."
+    },
+    {
+      "id": "tema_ux",
+      "categoria": "Diseño",
+      "titulo": "UX/UI",
+      "descripcion": "Diseño centrado en el usuario: accesibilidad y usabilidad."
+    },
+    {
+      "id": "tema_multimedia",
+      "categoria": "Multimedia",
+      "titulo": "Multimedia digital",
+      "descripcion": "Imagen, audio, video y compresión."
+    }
+  ],
+  "regla_fallback_tema": {
+    "modo": "rotacion_por_dia_del_anio",
+    "descripcion": "Si NO existe un evento en la fecha (MM-DD), usar un tema rotativo.",
+    "formula": "indice = (dia_del_anio - 1) % temas_rotativos.length",
+    "campo_resultante": "tema_id"
+  },
+  "eventos_mundiales": {
+    "01-01": {
+      "mes": 1,
+      "dia": 1,
+      "categoria": "Internet",
+      "titulo": "TCP/IP se adopta como estándar en ARPANET (1983)",
+      "texto_corto": "Se consolida el 'lenguaje' base que permite Internet.",
+      "texto_largo": "ARPANET adoptó TCP/IP como conjunto de protocolos estándar. Esto permitió que redes distintas se comunicaran bajo reglas comunes y se consolidara Internet como infraestructura de interconexión global."
+    },
+    "01-07": {
+      "mes": 1,
+      "dia": 7,
+      "categoria": "Ciencia y tecnología",
+      "titulo": "Galileo observa los satélites de Júpiter (1610)",
+      "texto_corto": "Una observación que impulsa la ciencia moderna.",
+      "texto_largo": "Galileo identificó cuerpos orbitando Júpiter, mostrando que no todo gira alrededor de la Tierra. Fue clave para el método científico basado en evidencia y el avance de instrumentos ópticos."
+    },
+    "01-15": {
+      "mes": 1,
+      "dia": 15,
+      "categoria": "Internet / Educación",
+      "titulo": "Lanzamiento de Wikipedia (2001)",
+      "texto_corto": "La enciclopedia colaborativa transforma el acceso al conocimiento.",
+      "texto_largo": "Wikipedia se lanzó como una enciclopedia digital editable de forma colaborativa. Contribuyó al acceso abierto al conocimiento y se volvió una referencia cotidiana para aprendizaje y divulgación."
+    },
+    "01-24": {
+      "mes": 1,
+      "dia": 24,
+      "categoria": "Computación",
+      "titulo": "Apple presenta la Macintosh (1984)",
+      "texto_corto": "La interfaz gráfica y el mouse se vuelven masivos.",
+      "texto_largo": "La Macintosh impulsó la adopción de la interfaz gráfica de usuario y del mouse para el público general, cambiando la forma de interactuar con computadoras personales."
+    },
+    "02-04": {
+      "mes": 2,
+      "dia": 4,
+      "categoria": "Internet",
+      "titulo": "Se funda Facebook (2004)",
+      "texto_corto": "Las redes sociales modernas se vuelven masivas.",
+      "texto_largo": "Facebook aceleró la transformación social de Internet, cambiando la comunicación digital, el acceso a contenidos y abriendo debates sobre privacidad, seguridad y desinformación."
+    },
+    "02-15": {
+      "mes": 2,
+      "dia": 15,
+      "categoria": "Computación",
+      "titulo": "Presentación de la computadora ENIAC (1946)",
+      "texto_corto": "Arranque de la computación electrónica a gran escala.",
+      "texto_largo": "ENIAC se presentó como una computadora electrónica de propósito general. Su impacto impulsó el desarrollo de máquinas programables y la evolución hacia sistemas cada vez más compactos y potentes."
+    },
+    "03-12": {
+      "mes": 3,
+      "dia": 12,
+      "categoria": "Internet",
+      "titulo": "Propuesta de la World Wide Web (1989)",
+      "texto_corto": "Nace la idea de la Web: hipertexto sobre Internet.",
+      "texto_largo": "Se propuso un sistema para enlazar documentos mediante hipertexto en redes, lo que evolucionó a la World Wide Web con conceptos como URLs, HTTP y HTML."
+    },
+    "03-14": {
+      "mes": 3,
+      "dia": 14,
+      "categoria": "Ciencia",
+      "titulo": "Día de Pi (3.14)",
+      "texto_corto": "Celebración de matemáticas y ciencia.",
+      "texto_largo": "Se usa para promover matemáticas y pensamiento científico, fundamentales para ingeniería, programación, física y electrónica."
+    },
+    "03-31": {
+      "mes": 3,
+      "dia": 31,
+      "categoria": "Ciberseguridad",
+      "titulo": "World Backup Day",
+      "texto_corto": "Cultura de respaldos y resiliencia digital.",
+      "texto_largo": "Fecha de concientización sobre copias de seguridad y protección de información: versiones, almacenamiento y recuperación ante fallas o ataques."
+    },
+    "04-01": {
+      "mes": 4,
+      "dia": 1,
+      "categoria": "Computación",
+      "titulo": "Fundación de Apple (1976)",
+      "texto_corto": "Empresa clave en computación personal y móvil.",
+      "texto_largo": "Apple inició un recorrido de innovación en computación personal, interfaces, diseño de producto y, posteriormente, la revolución móvil con smartphones y ecosistemas de apps."
+    },
+    "04-03": {
+      "mes": 4,
+      "dia": 3,
+      "categoria": "Telecomunicaciones",
+      "titulo": "Primera llamada desde un teléfono móvil portátil (1973)",
+      "texto_corto": "Inicio práctico de la telefonía celular moderna.",
+      "texto_largo": "Se realizó una llamada desde un prototipo de teléfono móvil portátil, simbolizando el arranque de la telefonía celular que evolucionaría hacia redes modernas y smartphones."
+    },
+    "04-12": {
+      "mes": 4,
+      "dia": 12,
+      "categoria": "Aeroespacial",
+      "titulo": "Primer humano en el espacio: Yuri Gagarin (1961)",
+      "texto_corto": "Comienza la era espacial tripulada.",
+      "texto_largo": "El vuelo orbital de Gagarin impulsó materiales avanzados, control, telecomunicaciones y medicina espacial, además de acelerar el desarrollo tecnológico global."
+    },
+    "04-19": {
+      "mes": 4,
+      "dia": 19,
+      "categoria": "Software",
+      "titulo": "Fundación de Microsoft (1975)",
+      "texto_corto": "El software se vuelve motor de la computación personal.",
+      "texto_largo": "Microsoft impulsó herramientas y plataformas que ayudaron a masificar el uso de PC y la industria del software, especialmente en entornos educativos y empresariales."
+    },
+    "04-24": {
+      "mes": 4,
+      "dia": 24,
+      "categoria": "Aeroespacial",
+      "titulo": "Lanzamiento del telescopio espacial Hubble (1990)",
+      "texto_corto": "Observación espacial de alta precisión.",
+      "texto_largo": "El Hubble transformó la observación astronómica y mostró la fuerza de la tecnología espacial en óptica, sensores, procesamiento de imagen y telecomunicaciones."
+    },
+    "05-17": {
+      "mes": 5,
+      "dia": 17,
+      "categoria": "Telecomunicaciones",
+      "titulo": "Día Mundial de las Telecomunicaciones y la Sociedad de la Información",
+      "texto_corto": "Conectividad y desarrollo digital.",
+      "texto_largo": "Fecha ideal para hablar de infraestructura, brecha digital, conectividad y el papel de la tecnología en educación, economía y comunicación."
+    },
+    "05-24": {
+      "mes": 5,
+      "dia": 24,
+      "categoria": "Telecomunicaciones",
+      "titulo": "Primer mensaje telegráfico (1844)",
+      "texto_corto": "La comunicación a distancia se vuelve casi instantánea.",
+      "texto_largo": "El telégrafo demostró transmisión eléctrica de mensajes a larga distancia, reduciendo drásticamente tiempos de comunicación y abriendo camino a redes modernas."
+    },
+    "06-23": {
+      "mes": 6,
+      "dia": 23,
+      "categoria": "Computación",
+      "titulo": "Nacimiento de Alan Turing (1912)",
+      "texto_corto": "Referente de computación teórica y bases de la IA.",
+      "texto_largo": "Sus aportes fundamentan la informática moderna y son excelentes para conectar historia, algoritmos, cripto y ética tecnológica."
+    },
+    "06-29": {
+      "mes": 6,
+      "dia": 29,
+      "categoria": "Móviles",
+      "titulo": "Sale a la venta el iPhone (2007)",
+      "texto_corto": "Se consolida el smartphone moderno y el mercado de apps.",
+      "texto_largo": "La llegada comercial del iPhone aceleró la adopción de pantallas táctiles, navegación web móvil y economías basadas en aplicaciones."
+    },
+    "07-20": {
+      "mes": 7,
+      "dia": 20,
+      "categoria": "Aeroespacial",
+      "titulo": "Alunizaje del Apolo 11 (1969)",
+      "texto_corto": "Integración tecnológica al límite.",
+      "texto_largo": "Hito de ingeniería con computación embebida, navegación, control y telecomunicaciones, además de procesos de calidad y redundancia."
+    },
+    "08-06": {
+      "mes": 8,
+      "dia": 6,
+      "categoria": "Internet",
+      "titulo": "Publicación del primer sitio web (1991)",
+      "texto_corto": "Arranca la Web pública.",
+      "texto_largo": "Se puso en línea el primer sitio web con información de la propia Web, acelerando el crecimiento de contenidos, servicios y educación digital."
+    },
+    "08-12": {
+      "mes": 8,
+      "dia": 12,
+      "categoria": "Computación",
+      "titulo": "IBM lanza la IBM PC (1981)",
+      "texto_corto": "Se estandariza la computadora personal.",
+      "texto_largo": "La IBM PC consolidó una arquitectura estándar que aceleró la adopción de PC en escuelas, hogares y empresas, y empujó el desarrollo de software."
+    },
+    "09-04": {
+      "mes": 9,
+      "dia": 4,
+      "categoria": "Energía",
+      "titulo": "Electrificación urbana: central eléctrica comercial (1882)",
+      "texto_corto": "La energía eléctrica se distribuye a gran escala.",
+      "texto_largo": "La operación de una central eléctrica comercial impulsó redes de distribución y la expansión de tecnologías eléctricas en ciudades, industria y hogares."
+    },
+    "09-27": {
+      "mes": 9,
+      "dia": 27,
+      "categoria": "Internet",
+      "titulo": "Fundación de Google (1998)",
+      "texto_corto": "La búsqueda redefine el acceso a la información.",
+      "texto_largo": "Google impulsó mejoras en indexación y búsqueda, cambiando educación, productividad y el ecosistema de servicios digitales."
+    },
+    "10-04": {
+      "mes": 10,
+      "dia": 4,
+      "categoria": "Aeroespacial",
+      "titulo": "Lanzamiento del Sputnik 1 (1957)",
+      "texto_corto": "Primer satélite artificial: inicia la era espacial.",
+      "texto_largo": "Detonó avances en cohetería, comunicaciones y electrónica, además de impulsar tecnologías satelitales usadas hoy en navegación y monitoreo."
+    },
+    "10-29": {
+      "mes": 10,
+      "dia": 29,
+      "categoria": "Internet",
+      "titulo": "Primer mensaje en ARPANET (1969)",
+      "texto_corto": "Nacimiento práctico de las redes de computadoras.",
+      "texto_largo": "La transmisión entre nodos marcó el inicio de la comunicación entre computadoras en red, antecedente directo del Internet actual."
+    },
+    "11-29": {
+      "mes": 11,
+      "dia": 29,
+      "categoria": "Computación",
+      "titulo": "Intel 4004 (1971)",
+      "texto_corto": "El microprocesador como producto comercial.",
+      "texto_largo": "Integrar la CPU en un chip abrió el camino a PCs, sistemas embebidos y la miniaturización de dispositivos."
+    },
+    "11-30": {
+      "mes": 11,
+      "dia": 30,
+      "categoria": "Inteligencia Artificial",
+      "titulo": "Lanzamiento público de ChatGPT (2022)",
+      "texto_corto": "La IA generativa se vuelve masiva.",
+      "texto_largo": "La IA generativa conversacional se popularizó para educación, programación y creación de contenido, junto con nuevos retos de uso responsable."
+    },
+    "12-03": {
+      "mes": 12,
+      "dia": 3,
+      "categoria": "Móviles",
+      "titulo": "Primer SMS (1992)",
+      "texto_corto": "Nace la mensajería móvil.",
+      "texto_largo": "La mensajería transformó hábitos de comunicación, servicios digitales y modelos de negocio, abriendo camino a apps de chat y notificaciones."
+    },
+    "12-10": {
+      "mes": 12,
+      "dia": 10,
+      "categoria": "Computación",
+      "titulo": "Nacimiento de Ada Lovelace (1815)",
+      "texto_corto": "Pionera del pensamiento algorítmico.",
+      "texto_largo": "Se reconoce como figura histórica por describir ideas algorítmicas aplicables a máquinas, útil para hablar de historia de la programación y mujeres en STEM."
+    },
+    "12-23": {
+      "mes": 12,
+      "dia": 23,
+      "categoria": "Electrónica",
+      "titulo": "Invención del transistor (1947)",
+      "texto_corto": "Base de la electrónica moderna.",
+      "texto_largo": "El transistor sustituyó válvulas de vacío, permitió miniaturización y habilitó computadoras, teléfonos y prácticamente toda la electrónica actual."
+    },
+    "12-28": {
+      "mes": 12,
+      "dia": 28,
+      "categoria": "Tecnología audiovisual",
+      "titulo": "Primera proyección pública de cine (1895)",
+      "texto_corto": "Arranca la industria audiovisual moderna.",
+      "texto_largo": "Consolidó el cine como tecnología e industria, impulsando cámaras, proyección, edición y, más adelante, efectos digitales."
+    }
+  },
+  "mexico_educacion_tecnica": {
+    "efemerides_fecha_exacta": {
+      "01-21": {
+        "mes": 1,
+        "dia": 21,
+        "categoria": "Educación Media Superior (México)",
+        "titulo": "Reglamento Interior de la SEP (2005) — referencia del documento",
+        "texto_corto": "Reestructuración administrativa mencionada en el documento.",
+        "texto_largo": "En el documento se menciona que el Reglamento Interior de la SEP fue publicado el 21 de enero de 2005 en el D.O.F. y que este proceso se vincula a la creación de la SEMS."
+      },
+      "01-22": {
+        "mes": 1,
+        "dia": 22,
+        "categoria": "Educación Media Superior (México)",
+        "titulo": "Creación de la Subsecretaría de Educación Media Superior (SEMS) (2005)",
+        "texto_corto": "Se crea la SEMS al concluir la reestructuración de la SEP.",
+        "texto_largo": "El documento indica que el 22 de enero de 2005 fue creada la SEMS como parte de la reestructuración de la SEP, con impacto en la coordinación de la educación media superior."
+      },
+      "02-04": {
+        "mes": 2,
+        "dia": 4,
+        "categoria": "Educación Media Superior (México)",
+        "titulo": "Acuerdo 351 (2005) — incorporación a la SEMS",
+        "texto_corto": "Se oficializa la incorporación de direcciones generales a la SEMS.",
+        "texto_largo": "El documento señala que mediante el Acuerdo 351, publicado el 4 de febrero de 2005 en el D.O.F., se oficializó la incorporación a la SEMS de varias direcciones generales (incluida DGETI)."
+      },
+      "02-08": {
+        "mes": 2,
+        "dia": 8,
+        "categoria": "Reforma educativa (México)",
+        "titulo": "Obligatoriedad del bachillerato (2012) — referencia del documento",
+        "texto_corto": "Reforma constitucional para hacer obligatorio el nivel medio superior.",
+        "texto_largo": "El documento menciona que el 8 de febrero de 2012 se firmó el decreto de reforma a los artículos 3° y 31 constitucionales para hacer obligatorio el bachillerato."
+      },
+      "09-26": {
+        "mes": 9,
+        "dia": 26,
+        "categoria": "Educación Media Superior (México)",
+        "titulo": "Sistema Nacional de Bachillerato (2008) — referencia del documento",
+        "texto_corto": "Se establece el SNB en un marco de diversidad.",
+        "texto_largo": "El documento indica que el 26 de septiembre de 2008 se estableció el Sistema Nacional de Bachillerato, con el objetivo de renovar y rediseñar planes de estudio para formar capacidades y competencias."
+      },
+      "10-11": {
+        "mes": 10,
+        "dia": 11,
+        "categoria": "Administración educativa (México)",
+        "titulo": "Reasignación de DGEST (2006) — referencia del documento",
+        "texto_corto": "Movimiento administrativo citado en el documento.",
+        "texto_largo": "El documento menciona que el 11 de octubre de 2006 se publicó en el D.O.F. un decreto de reformas al Reglamento Interior de la SEP que reasignó la Dirección General de Educación Secundaria Técnica."
+      }
+    },
+    "linea_del_tiempo_por_anio": [
+      {
+        "anio": 1867,
+        "categoria": "Antecedentes",
+        "titulo": "Reforma: reglamentación educativa y origen del sistema tecnológico",
+        "descripcion": "a partir de 1867 se reglamenta la educación, se impulsa la educación de la mujer, se crea la Escuela Nacional Preparatoria y la Escuela Nacional de Artes y Oficios para Varones, consideradas génesis del sistema de educación tecnológica."
+      },
+      {
+        "anio": 1901,
+        "categoria": "Escuelas técnicas",
+        "titulo": "Escuela Mercantil para mujeres \"Miguel Lerdo de Tejada\"",
+        "descripcion": "en 1901 se creó la Escuela Mercantil para mujeres 'Miguel Lerdo de Tejada' (hoy CETIS No. 7)."
+      },
+      {
+        "anio": 1910,
+        "categoria": "Escuelas técnicas",
+        "titulo": "Escuela Primaria Industrial para mujeres \"Corregidora de Querétaro\"",
+        "descripcion": "en 1910 se inauguró la Escuela Primaria Industrial para mujeres 'Corregidora de Querétaro' (hoy CETIS No. 9), con formación en confección."
+      },
+      {
+        "anio": 1916,
+        "categoria": "Ingeniería / formación técnica",
+        "titulo": "Transformación a EPIME (origen ESIME)",
+        "descripcion": "en 1916 se transformó la Escuela de Artes y Oficios para Varones en EPIME; después EIME y en 1932 ESIME."
+      },
+      {
+        "anio": 1921,
+        "categoria": "Instituciones",
+        "titulo": "Creación de la SEP",
+        "descripcion": "la creación de la SEP en 1921 como estructura clave para sistematizar la labor educativa del siglo XX."
+      },
+      {
+        "anio": 1922,
+        "categoria": "Organización educativa",
+        "titulo": "Departamento de Enseñanza Técnica Industrial y Comercial",
+        "descripcion": "Se instituye para aglutinar y crear escuelas con enseñanza técnica industrial y comercial."
+      },
+      {
+        "anio": 1931,
+        "categoria": "Sistema politécnico",
+        "titulo": "Creación de la Preparatoria Técnica",
+        "descripcion": "Se menciona como columna vertebral de la Escuela Politécnica y antecedente de estudios técnicos posteriores."
+      },
+      {
+        "anio": 1936,
+        "categoria": "Instituciones",
+        "titulo": "Integración del Instituto Politécnico Nacional (IPN)",
+        "descripcion": "Se integra el IPN absorbiendo escuelas del Departamento de Enseñanza Técnica, Industrial y Comercial."
+      },
+      {
+        "anio": 1941,
+        "categoria": "Reorganización",
+        "titulo": "División del sistema de enseñanza técnica industrial",
+        "descripcion": "la división entre IPN y el Departamento de Enseñanzas Especiales para atender distintos tipos de escuelas."
+      },
+      {
+        "anio": 1958,
+        "categoria": "Política educativa",
+        "titulo": "Subsecretaría de Enseñanza Técnica y Superior",
+        "descripcion": "Se crea para evidenciar la importancia alcanzada por la educación técnica en el país."
+      },
+      {
+        "anio": 1959,
+        "categoria": "Estructura educativa",
+        "titulo": "Creación de la DGETIC y establecimiento de Secundaria Técnica",
+        "descripcion": "en 1959 se conforma la DGETIC y se establece el ciclo de secundaria con actividades tecnológicas."
+      },
+      {
+        "anio": 1966,
+        "categoria": "Formación docente",
+        "titulo": "Creación de ENAMACTI",
+        "descripcion": "Orientada a formar personal docente para actividades tecnológicas."
+      },
+      {
+        "anio": 1968,
+        "categoria": "EMS tecnológica",
+        "titulo": "Creación de Centros de Estudios Tecnológicos",
+        "descripcion": "Se crean para ofrecer formación profesional de nivel medio superior en el área industrial."
+      },
+      {
+        "anio": 1969,
+        "categoria": "Secundaria técnica",
+        "titulo": "Integración de escuelas tecnológicas a DGETIC",
+        "descripcion": "Escuelas prevocacionales se integran como secundarias técnicas (y se incorporan secundarias técnicas agropecuarias)."
+      },
+      {
+        "anio": 1971,
+        "categoria": "Reorganización",
+        "titulo": "DGETIC toma denominación DGETI",
+        "descripcion": "la DGETIC adopta el nombre DGETI y se reorganiza bajo nueva subsecretaría."
+      },
+      {
+        "anio": 1975,
+        "categoria": "Sistema educativo",
+        "titulo": "Consejo del Sistema Nacional de Educación Técnica",
+        "descripcion": "Se funda como órgano consultivo; antecedente de COSNET."
+      },
+      {
+        "anio": 1976,
+        "categoria": "Estructura educativa",
+        "titulo": "Subsecretaría de Educación e Investigación Tecnológicas y DG de Institutos Tecnológicos",
+        "descripcion": "Se transforma la subsecretaría y se crea la DG de Institutos Tecnológicos."
+      },
+      {
+        "anio": 1978,
+        "categoria": "Reorganización",
+        "titulo": "DGETI se concentra en nivel medio superior y se instaura COSNET",
+        "descripcion": "En septiembre de 1978 la secundaria técnica pasa a otra DG y DGETI atiende exclusivamente el nivel medio superior; en diciembre se instaura COSNET."
+      },
+      {
+        "anio": 1981,
+        "categoria": "Planteles",
+        "titulo": "Denominación CBTIS para planteles bivalentes",
+        "descripcion": "Se establece el nombre de Centros de Bachillerato Tecnológico (industrial y de servicios) y se consolida CBTIS."
+      },
+      {
+        "anio": 1984,
+        "categoria": "Desconcentración",
+        "titulo": "Desconcentración de funciones: coordinaciones regionales",
+        "descripcion": "Se inicia el proceso de desconcentración de DGETI con coordinaciones regionales."
+      },
+      {
+        "anio": 1991,
+        "categoria": "Descentralización",
+        "titulo": "Creación de CECyTEs estatales",
+        "descripcion": "Se crean para atender incremento de demanda con participación de gobiernos estatales y vinculación regional."
+      },
+      {
+        "anio": 2005,
+        "categoria": "Estructura EMS",
+        "titulo": "Reestructuración SEP y adscripción a SEMS",
+        "descripcion": "la creación de SEMS y la incorporación formal de varias direcciones generales a esta subsecretaría."
+      },
+      {
+        "anio": 2008,
+        "categoria": "Marco común",
+        "titulo": "Sistema Nacional de Bachillerato",
+        "descripcion": "Se establece para renovar y rediseñar planes de estudio con enfoque de capacidades y competencias."
+      },
+      {
+        "anio": 2012,
+        "categoria": "Reforma",
+        "titulo": "Obligatoriedad del bachillerato",
+        "descripcion": "Reforma constitucional para hacer obligatorio el nivel medio superior."
+      }
+    ],
+    "datos_actuales_segun_texto": {
+      "descripcion": "DGETI es el subsistema de EMS tecnológica más grande del país.",
+      "planteles_total": 456,
+      "cetis": 168,
+      "cbtis": 288,
+      "cecytes_con_asistencia": 652
+    }
+  }
+}
