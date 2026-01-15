@@ -336,9 +336,9 @@
     </section>
 
     <section class="card no-print">
-      <h2 class="page-title" id="consulta-horario">Consulta tu horario oficial</h2>
+      <h2 class="page-title" id="consulta-horario">Consulta tus horarios docentes</h2>
       <p style="margin-bottom:18px;">
-        Ingresa tu RFC para descargar la distribución oficial de actividades asignada por la coordinación académica.
+        Ingresa tu RFC para descargar la distribución oficial y práctica de actividades asignadas por la coordinación académica.
         Si aún no cuentas con acceso, comunícate con control escolar para validar tus datos.
       </p>
       <div class="schedule-search no-print">
@@ -352,7 +352,7 @@
 
     <section id="horarioContainer" class="schedule-results" style="display:none;">
       <div class="no-print" style="text-align:right; margin-bottom:10px;">
-        <button class="btn" type="button" onclick="window.print()">Imprimir horario</button>
+        <button class="btn" type="button" onclick="window.print()">Imprimir horarios</button>
       </div>
       <div id="horarioResultados"></div>
     </section>
@@ -453,117 +453,206 @@
         return AUTHORITIES.serviciosDocentes.vespertino;
       }
 
-      function renderHorarioCards(list) {
-        horarioResultados.innerHTML = list.map(item => {
-          const meta = item.metadata || {};
-          const docente = item.docente || {};
-          const carga = Array.isArray(item.carga_academica) ? [...item.carga_academica] : [];
+      function normalizeScheduleLabel(tipo, duracion) {
+        const tipoText = (tipo || '').toLowerCase();
+        const duracionNum = Number(duracion);
+        if (tipoText.includes('oficial') || duracionNum === 60) return 'Horario oficial (60 min)';
+        if (tipoText.includes('practic') || duracionNum === 50) return 'Horario práctico (50 min)';
+        if (!Number.isNaN(duracionNum) && duracionNum > 0) return `Horario docente (${duracionNum} min)`;
+        return 'Horario docente';
+      }
 
-          carga.sort((a, b) => {
-            const dayDiff = dayPriority(a && a.dia ? a.dia : '') - dayPriority(b && b.dia ? b.dia : '');
-            if (dayDiff !== 0) return dayDiff;
-            return timeToMinutes(a && a.hora_inicio ? a.hora_inicio : '') - timeToMinutes(b && b.hora_inicio ? b.hora_inicio : '');
+      function normalizeScheduleKey(label, index) {
+        return `${label}-${index}`.toLowerCase().replace(/\s+/g, '-');
+      }
+
+      function extractScheduleVariants(item) {
+        const metaBase = item.metadata || {};
+        const variants = [];
+
+        const addVariant = (config) => {
+          const carga = Array.isArray(config.carga) ? config.carga : [];
+          if (!carga.length && !config.allowEmpty) return;
+          const label = normalizeScheduleLabel(config.tipo, config.duracion) || config.label;
+          variants.push({
+            key: normalizeScheduleKey(label, variants.length),
+            label,
+            carga,
+            meta: { ...metaBase, ...(config.meta || {}) }
           });
+        };
 
-          const rows = carga.map(act => `
-            <tr>
-              <td>${escapeHtml(act.dia || '')}</td>
-              <td>${escapeHtml(act.hora_inicio || '')} - ${escapeHtml(act.hora_fin || '')}</td>
-              <td>${escapeHtml(act.asignatura || '')}</td>
-              <td>${escapeHtml(act.grupo || '')}</td>
-              <td>${escapeHtml(act.especialidad || '')}</td>
-              <td>${escapeHtml(act.salon || 'Por asignar')}</td>
-              <td>${escapeHtml(act.aula_tipo || '')}</td>
-              <td>${act.horas ?? ''}</td>
-            </tr>
-          `).join('');
+        if (Array.isArray(item.horarios)) {
+          item.horarios.forEach(horario => {
+            addVariant({
+              carga: horario.carga_academica || horario.carga || horario.clases || [],
+              tipo: horario.tipo || horario.nombre || horario.label,
+              duracion: horario.duracion_minutos || horario.duracion || horario.minutos,
+              meta: horario.metadata || horario.meta || {}
+            });
+          });
+        } else if (item.horarios && typeof item.horarios === 'object') {
+          const oficial = item.horarios.oficial || item.horarios.oficial_60 || item.horarios['60'];
+          const practico = item.horarios.practico || item.horarios.practica || item.horarios.practico_50 || item.horarios['50'];
 
-          return `
-            <article class="schedule-result-card">
-              <div class="doc-print-header">
-                <img src="${LOGO_URL}" alt="Logo CETIS 50" />
-                <div class="doc-header-text">
-                  <h2>Centro de Estudios Tecnológicos Industrial y de Servicios N° 50</h2>
-                  <p>${escapeHtml(meta.origen_documento || 'DGETI - Distribución de Actividades Académicas')}</p>
-                  <small>Horario oficial de actividades</small>
-                </div>
-              </div>
+          if (oficial) {
+            addVariant({
+              carga: oficial.carga_academica || oficial.carga || oficial.clases || oficial,
+              tipo: oficial.tipo || 'oficial',
+              duracion: oficial.duracion_minutos || oficial.duracion || 60,
+              meta: oficial.metadata || oficial.meta || {}
+            });
+          }
+          if (practico) {
+            addVariant({
+              carga: practico.carga_academica || practico.carga || practico.clases || practico,
+              tipo: practico.tipo || 'practico',
+              duracion: practico.duracion_minutos || practico.duracion || 50,
+              meta: practico.metadata || practico.meta || {}
+            });
+          }
+        }
 
-              <div class="result-head">
-                <div>
-                  <h3>${escapeHtml(docente.nombre || docente.rfc || 'Horario docente')}</h3>
-                  <p>${escapeHtml(meta.ciclo_escolar || 'Ciclo sin especificar')} · ${escapeHtml(meta.periodo || '')}</p>
-                </div>
-                <div class="result-head-meta">
-                  <span><strong>Turno:</strong> ${escapeHtml(docente.turno || 'Sin dato')}</span>
-                  <span><strong>Categoría:</strong> ${escapeHtml(docente.categoria || 'N/A')}</span>
-                </div>
-              </div>
+        if (!variants.length) {
+          addVariant({
+            carga: item.carga_academica || item.carga_oficial || item.carga_academica_60 || [],
+            tipo: 'oficial',
+            duracion: 60
+          });
+        }
 
-              <div class="doc-meta">
-                <div><strong>RFC:</strong> ${escapeHtml(docente.rfc || '')}</div>
-                <div><strong>CURP:</strong> ${escapeHtml(docente.curp || '')}</div>
-                <div><strong>Perfil:</strong> ${escapeHtml(docente.perfil || 'Sin especificar')}</div>
-                <div><strong>Correo institucional:</strong> ${escapeHtml(docente.correo || '')}</div>
-                <div><strong>Plantel:</strong> ${escapeHtml(meta.plantel || '')}</div>
-                <div><strong>Ubicación:</strong> ${escapeHtml(meta.ubicacion || '')}</div>
-              </div>
+        if (!variants.some(v => v.label.toLowerCase().includes('práctico') || v.label.toLowerCase().includes('practico'))) {
+          addVariant({
+            carga: item.carga_practica || item.carga_práctica || item.carga_academica_50 || [],
+            tipo: 'practico',
+            duracion: 50
+          });
+        }
 
-              <div class="schedule-table-wrapper">
-                <table class="schedule-table">
-                  <thead>
-                    <tr>
-                      <th>Día</th>
-                      <th>Horario</th>
-                      <th>Asignatura</th>
-                      <th>Grupo</th>
-                      <th>Especialidad</th>
-                      <th>Aula</th>
-                      <th>Tipo</th>
-                      <th>Horas</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${rows || '<tr><td colspan="8">No hay clases asignadas.</td></tr>'}
-                  </tbody>
-                </table>
-              </div>
+        return variants.length ? variants : [{
+          key: 'horario-docente',
+          label: 'Horario docente',
+          carga: [],
+          meta: metaBase
+        }];
+      }
 
-              <div class="metadata-foot">
-                <div><strong>Documento:</strong> ${escapeHtml(meta.origen_documento || 'Distribución oficial')}</div>
-                <div><strong>Registro:</strong> ${escapeHtml(meta.fecha_registro || '')}</div>
-                ${(() => {
-                  const formatted = formatDate(item.updatedAt);
-                  return formatted ? `<div><strong>Última actualización:</strong> ${escapeHtml(formatted)}</div>` : '';
-                })()}
-              </div>
+      function renderHorarioCards(list) {
+        const cardsHtml = list.flatMap(item => {
+          const docente = item.docente || {};
+          const variants = extractScheduleVariants(item);
 
-              <div class="schedule-signatures">
-                <div class="signature-block">
-                  <div class="signature-line"></div>
-                  <strong>Docente</strong>
-                  <span>${escapeHtml(docente.nombre || docente.rfc || '')}</span>
+          return variants.map(variant => {
+            const carga = Array.isArray(variant.carga) ? [...variant.carga] : [];
+            const meta = variant.meta || {};
+
+            carga.sort((a, b) => {
+              const dayDiff = dayPriority(a && a.dia ? a.dia : '') - dayPriority(b && b.dia ? b.dia : '');
+              if (dayDiff !== 0) return dayDiff;
+              return timeToMinutes(a && a.hora_inicio ? a.hora_inicio : '') - timeToMinutes(b && b.hora_inicio ? b.hora_inicio : '');
+            });
+
+            const rows = carga.map(act => `
+              <tr>
+                <td>${escapeHtml(act.dia || '')}</td>
+                <td>${escapeHtml(act.hora_inicio || '')} - ${escapeHtml(act.hora_fin || '')}</td>
+                <td>${escapeHtml(act.asignatura || '')}</td>
+                <td>${escapeHtml(act.grupo || '')}</td>
+                <td>${escapeHtml(act.especialidad || '')}</td>
+                <td>${escapeHtml(act.salon || 'Por asignar')}</td>
+                <td>${escapeHtml(act.aula_tipo || '')}</td>
+                <td>${act.horas ?? ''}</td>
+              </tr>
+            `).join('');
+
+            return `
+              <article class="schedule-result-card" data-schedule-type="${escapeHtml(variant.key)}">
+                <div class="doc-print-header">
+                  <img src="${LOGO_URL}" alt="Logo CETIS 50" />
+                  <div class="doc-header-text">
+                    <h2>Centro de Estudios Tecnológicos Industrial y de Servicios N° 50</h2>
+                    <p>${escapeHtml(meta.origen_documento || 'DGETI - Distribución de Actividades Académicas')}</p>
+                    <small>${escapeHtml(variant.label)}</small>
+                  </div>
                 </div>
-                <div class="signature-block">
-                  <div class="signature-line"></div>
-                  <strong>Servicios Docentes</strong>
-                  <span>${escapeHtml(getServiciosDocentesName(docente.turno))}</span>
+
+                <div class="result-head">
+                  <div>
+                    <h3>${escapeHtml(docente.nombre || docente.rfc || 'Horario docente')}</h3>
+                    <p>${escapeHtml(meta.ciclo_escolar || 'Ciclo sin especificar')} · ${escapeHtml(meta.periodo || '')}</p>
+                  </div>
+                  <div class="result-head-meta">
+                    <span><strong>Turno:</strong> ${escapeHtml(docente.turno || 'Sin dato')}</span>
+                    <span><strong>Categoría:</strong> ${escapeHtml(docente.categoria || 'N/A')}</span>
+                  </div>
                 </div>
-                <div class="signature-block">
-                  <div class="signature-line"></div>
-                  <strong>Subdirección Técnica</strong>
-                  <span>${escapeHtml(AUTHORITIES.subdirector)}</span>
+
+                <div class="doc-meta">
+                  <div><strong>RFC:</strong> ${escapeHtml(docente.rfc || '')}</div>
+                  <div><strong>CURP:</strong> ${escapeHtml(docente.curp || '')}</div>
+                  <div><strong>Perfil:</strong> ${escapeHtml(docente.perfil || 'Sin especificar')}</div>
+                  <div><strong>Correo institucional:</strong> ${escapeHtml(docente.correo || '')}</div>
+                  <div><strong>Plantel:</strong> ${escapeHtml(meta.plantel || '')}</div>
+                  <div><strong>Ubicación:</strong> ${escapeHtml(meta.ubicacion || '')}</div>
                 </div>
-                <div class="signature-block">
-                  <div class="signature-line"></div>
-                  <strong>Dirección</strong>
-                  <span>${escapeHtml(AUTHORITIES.director)}</span>
+
+                <div class="schedule-table-wrapper">
+                  <table class="schedule-table">
+                    <thead>
+                      <tr>
+                        <th>Día</th>
+                        <th>Horario</th>
+                        <th>Asignatura</th>
+                        <th>Grupo</th>
+                        <th>Especialidad</th>
+                        <th>Aula</th>
+                        <th>Tipo</th>
+                        <th>Horas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${rows || '<tr><td colspan="8">No hay clases asignadas.</td></tr>'}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
-            </article>
-          `;
+
+                <div class="metadata-foot">
+                  <div><strong>Documento:</strong> ${escapeHtml(meta.origen_documento || 'Distribución oficial')}</div>
+                  <div><strong>Registro:</strong> ${escapeHtml(meta.fecha_registro || '')}</div>
+                  ${(() => {
+                    const formatted = formatDate(item.updatedAt);
+                    return formatted ? `<div><strong>Última actualización:</strong> ${escapeHtml(formatted)}</div>` : '';
+                  })()}
+                </div>
+
+                <div class="schedule-signatures">
+                  <div class="signature-block">
+                    <div class="signature-line"></div>
+                    <strong>Docente</strong>
+                    <span>${escapeHtml(docente.nombre || docente.rfc || '')}</span>
+                  </div>
+                  <div class="signature-block">
+                    <div class="signature-line"></div>
+                    <strong>Servicios Docentes</strong>
+                    <span>${escapeHtml(getServiciosDocentesName(docente.turno))}</span>
+                  </div>
+                  <div class="signature-block">
+                    <div class="signature-line"></div>
+                    <strong>Subdirección Técnica</strong>
+                    <span>${escapeHtml(AUTHORITIES.subdirector)}</span>
+                  </div>
+                  <div class="signature-block">
+                    <div class="signature-line"></div>
+                    <strong>Dirección</strong>
+                    <span>${escapeHtml(AUTHORITIES.director)}</span>
+                  </div>
+                </div>
+              </article>
+            `;
+          });
         }).join('');
 
+        horarioResultados.innerHTML = cardsHtml;
         horarioContainer.style.display = list.length ? 'block' : 'none';
       }
 

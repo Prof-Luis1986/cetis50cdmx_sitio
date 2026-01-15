@@ -1056,6 +1056,60 @@
       return 'Turno Mixto';
     }
 
+    function extractCargaFromNode(node) {
+      if (Array.isArray(node)) return node;
+      if (node && typeof node === 'object') {
+        if (Array.isArray(node.carga_academica)) return node.carga_academica;
+        if (Array.isArray(node.carga)) return node.carga;
+        if (Array.isArray(node.clases)) return node.clases;
+      }
+      return [];
+    }
+
+    function selectHorarioFromArray(horarios, prefer) {
+      if (!Array.isArray(horarios)) return null;
+      const preferMatch = horarios.find(h => {
+        const tipo = (h?.tipo || h?.nombre || h?.label || '').toLowerCase();
+        const duracion = Number(h?.duracion_minutos || h?.duracion || h?.minutos);
+        if (prefer === 'practico') return tipo.includes('practic') || duracion === 50;
+        return tipo.includes('oficial') || duracion === 60;
+      });
+      if (preferMatch) return preferMatch;
+      const fallbackMatch = horarios.find(h => {
+        const duracion = Number(h?.duracion_minutos || h?.duracion || h?.minutos);
+        return prefer === 'practico' ? duracion === 60 : duracion === 50;
+      });
+      return fallbackMatch || horarios[0] || null;
+    }
+
+    function extractDocenteCarga(data, prefer = 'practico') {
+      if (!data || typeof data !== 'object') return [];
+      const horarios = data.horarios;
+
+      if (Array.isArray(horarios)) {
+        const picked = selectHorarioFromArray(horarios, prefer);
+        const carga = extractCargaFromNode(picked);
+        if (carga.length) return carga;
+      } else if (horarios && typeof horarios === 'object') {
+        const practico = horarios.practico || horarios.practica || horarios.practico_50 || horarios['50'];
+        const oficial = horarios.oficial || horarios.oficial_60 || horarios['60'];
+        const picked = prefer === 'practico' ? (practico || oficial) : (oficial || practico);
+        const carga = extractCargaFromNode(picked);
+        if (carga.length) return carga;
+      }
+
+      if (prefer === 'practico') {
+        const cargaPractica = extractCargaFromNode(
+          data.carga_practica || data.carga_práctica || data.carga_academica_50
+        );
+        if (cargaPractica.length) return cargaPractica;
+      }
+
+      return extractCargaFromNode(
+        data.carga_academica || data.carga_oficial || data.carga_academica_60
+      );
+    }
+
     function formatResumenList(items, limit = 4) {
       const arr = Array.from(items || []);
       if (!arr.length) return 'Pendiente';
@@ -1090,7 +1144,7 @@
             };
           }
 
-          const carga = Array.isArray(data.carga_academica) ? data.carga_academica : [];
+          const carga = extractDocenteCarga(data, 'practico');
           resumen[turnoKey].docentes.add(infoDoc.rfc || doc.id);
           resumen[turnoKey].clases += carga.length;
 
@@ -1187,7 +1241,7 @@
         snapshot.forEach(doc => {
           const data = doc.data() || {};
           const docente = data.docente || {};
-          const carga = Array.isArray(data.carga_academica) ? data.carga_academica : [];
+          const carga = extractDocenteCarga(data, 'practico');
 
           carga.forEach(act => {
             clasesCache.push({
@@ -1229,25 +1283,35 @@
       const html = `
         <div class="inst-note">
           <strong>Nota:</strong> Aún no se han cargado los horarios definitivos en el sistema.
-          Presentamos los bloques oficiales por turno para referencia.
+          Presentamos los bloques generales de 50 minutos por turno para referencia.
         </div>
         <div class="inst-cards-container">
           <article class="inst-card">
             <h3>Turno Matutino (07:00 - 14:00)</h3>
             <ul>
-              <li><strong>07:00 - 08:50:</strong> Bloque académico</li>
-              <li><strong>08:50 - 09:10:</strong> Receso</li>
-              <li><strong>09:10 - 11:00:</strong> Bloque académico</li>
-              <li><strong>11:10 - 14:00:</strong> Laboratorios / actividades complementarias</li>
+              <li><strong>07:00 - 07:50:</strong> Clase 1</li>
+              <li><strong>07:50 - 08:40:</strong> Clase 2</li>
+              <li><strong>08:40 - 09:30:</strong> Clase 3</li>
+              <li><strong>09:30 - 09:50:</strong> Receso</li>
+              <li><strong>09:50 - 10:40:</strong> Clase 4</li>
+              <li><strong>10:40 - 11:30:</strong> Clase 5</li>
+              <li><strong>11:30 - 12:20:</strong> Clase 6</li>
+              <li><strong>12:20 - 13:10:</strong> Clase 7</li>
+              <li><strong>13:10 - 14:00:</strong> Clase 8</li>
             </ul>
           </article>
           <article class="inst-card">
             <h3>Turno Vespertino (14:00 - 21:00)</h3>
             <ul>
-              <li><strong>14:00 - 15:40:</strong> Bloque académico</li>
-              <li><strong>15:40 - 16:00:</strong> Receso</li>
-              <li><strong>16:00 - 18:00:</strong> Bloque académico</li>
-              <li><strong>18:10 - 21:00:</strong> Prácticas / tutorías</li>
+              <li><strong>14:00 - 14:50:</strong> Clase 1</li>
+              <li><strong>14:50 - 15:40:</strong> Clase 2</li>
+              <li><strong>15:40 - 16:30:</strong> Clase 3</li>
+              <li><strong>16:30 - 16:50:</strong> Receso</li>
+              <li><strong>16:50 - 17:40:</strong> Clase 4</li>
+              <li><strong>17:40 - 18:30:</strong> Clase 5</li>
+              <li><strong>18:30 - 19:20:</strong> Clase 6</li>
+              <li><strong>19:20 - 20:10:</strong> Clase 7</li>
+              <li><strong>20:10 - 21:00:</strong> Clase 8</li>
             </ul>
           </article>
         </div>
