@@ -382,6 +382,22 @@
       width: 220px;
     }
 
+    .carousel-audio-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 16px;
+      margin: 18px 0 12px;
+      padding: 12px 14px;
+      background: rgba(27, 40, 71, 0.08);
+      border: 1px solid rgba(27, 40, 71, 0.16);
+      border-radius: 12px;
+    }
+
+    .carousel-audio-wrap audio {
+      width: min(320px, 100%);
+    }
+
     @media (max-width: 700px) {
       .announcement-card.index-card {
         padding: 20px 18px 18px 18px;
@@ -457,6 +473,13 @@
       <div class="carousel-header">
         <h2>Momentos que inspiran</h2>
         <p>La educación transforma vidas. Celebramos a nuestros alumnos y el esfuerzo de cada día.</p>
+      </div>
+
+      <div class="carousel-audio-wrap" aria-label="Música de fondo del carrusel">
+        <audio class="carousel-audio" loop preload="none">
+          <source src="Pulsar.mp3" type="audio/mpeg" />
+          Tu navegador no soporta el reproductor de audio.
+        </audio>
       </div>
 
       <div class="carousel" data-carousel>
@@ -536,6 +559,14 @@
           <figure class="carousel-slide">
             <img src="18.JPG" alt="Orgullo CETIS 50: educación con propósito." />
             <figcaption class="carousel-caption">Orgullo CETIS 50: educación con propósito.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="19.png" alt="Cada logro refleja el compromiso de nuestra comunidad." />
+            <figcaption class="carousel-caption">Cada logro refleja el compromiso de nuestra comunidad.</figcaption>
+          </figure>
+          <figure class="carousel-slide">
+            <img src="20.jpg" alt="Aprender es avanzar juntos con entusiasmo." />
+            <figcaption class="carousel-caption">Aprender es avanzar juntos con entusiasmo.</figcaption>
           </figure>
         </div>
         <button class="carousel-toggle" type="button" aria-pressed="false">Pausar</button>
@@ -1417,10 +1448,26 @@
       if (carousel) {
         const slides = Array.from(carousel.querySelectorAll('.carousel-slide'));
         const toggleBtn = carousel.querySelector('.carousel-toggle');
+        const carouselAudio = document.querySelector('.carousel-audio');
         let currentIndex = 0;
         let intervalId = null;
         const intervalMs = 5000;
         const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let userInitiated = false;
+
+        const playCarouselAudio = () => {
+          if (!carouselAudio) return;
+          carouselAudio.volume = 0.2;
+          const playPromise = carouselAudio.play();
+          if (playPromise && typeof playPromise.then === 'function') {
+            playPromise.catch(() => {});
+          }
+        };
+
+        const pauseCarouselAudio = () => {
+          if (!carouselAudio) return;
+          carouselAudio.pause();
+        };
 
         const showSlide = (index) => {
           slides.forEach((slide, i) => {
@@ -1440,6 +1487,7 @@
             toggleBtn.textContent = 'Pausar';
             toggleBtn.setAttribute('aria-pressed', 'false');
           }
+          if (userInitiated) playCarouselAudio();
         };
 
         const stopAuto = () => {
@@ -1461,8 +1509,14 @@
 
         if (toggleBtn) {
           toggleBtn.addEventListener('click', () => {
-            if (intervalId) stopAuto();
-            else startAuto();
+            userInitiated = true;
+            if (intervalId) {
+              stopAuto();
+              pauseCarouselAudio();
+            } else {
+              startAuto();
+              playCarouselAudio();
+            }
           });
         }
       }
