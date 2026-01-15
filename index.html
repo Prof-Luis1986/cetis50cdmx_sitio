@@ -1457,7 +1457,7 @@
 
         const playCarouselAudio = () => {
           if (!carouselAudio) return;
-          carouselAudio.volume = 0.2;
+          carouselAudio.volume = 0.1;
           const playPromise = carouselAudio.play();
           if (playPromise && typeof playPromise.then === 'function') {
             playPromise.catch(() => {});
