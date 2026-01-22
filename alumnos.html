@@ -199,6 +199,35 @@
       color: rgba(255,255,255,0.9);
     }
 
+    .video-feature {
+      margin: 12px 0 20px;
+      padding: 18px 20px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(27, 40, 71, 0.12), rgba(122, 30, 41, 0.12));
+      border: 1px solid rgba(27, 40, 71, 0.18);
+    }
+
+    .video-feature h2 {
+      margin: 0 0 6px 0;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #1b2847;
+    }
+
+    .video-feature p {
+      margin: 0 0 12px 0;
+      color: #4a4a4a;
+    }
+
+    .video-feature video {
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      display: block;
+      background: #0f1a2a;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+    }
+
     .linea-cta a {
       background: #bfe9ff;
       color: #0b3d4f;
@@ -302,6 +331,15 @@
       <p>Llena tus datos y descarga tu ficha de pago con la información bancaria del plantel.</p>
     </div>
     <a href="linea-captura.html">Generar ficha</a>
+  </section>
+
+  <section class="video-feature" aria-label="Video Explorando Carrera">
+    <h2>Explorando Carrera</h2>
+    <p>Conoce las opciones que tenemos para ti en CETIS 50.</p>
+    <video controls preload="metadata">
+      <source src="Explorando_Carrera.mp4" type="video/mp4" />
+      Tu navegador no soporta video HTML5.
+    </video>
   </section>
 
   <section id="announcements-section" aria-live="polite">
