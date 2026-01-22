@@ -234,6 +234,11 @@
       line-height: 1.45;
       color: #5d1620;
     }
+    .programas-cta .cta-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
     .programas-cta a {
       background: #7a1e29;
       color: #fff;
@@ -243,6 +248,9 @@
       text-decoration: none;
       box-shadow: 0 8px 18px rgba(0,0,0,0.25);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .programas-cta a.is-secondary {
+      background: #1b2847;
     }
     .programas-cta a:hover {
       transform: translateY(-2px);
@@ -640,9 +648,18 @@
     <section class="programas-cta" aria-label="Acceso temporal a planeaciones didácticas de especialidad">
       <div>
         <h2>Programas de especialidad (acceso temporal)</h2>
-        <p>Enlace momentáneo para la realización de sus planeaciones didácticas de los nuevos programas de especialidad que aún no están en la plataforma oficial.</p>
+        <p>La plataforma ProPlanea solo servirá como una herramienta de apoyo para la realización de sus planeaciones didácticas de los nuevos programas de especialidad que aún no están en la plataforma oficial.</p>
       </div>
-      <a href="https://prof-luis1986.github.io/CE50_ProPlanea/" target="_blank" rel="noopener noreferrer">Abrir ProPlanea</a>
+      <div class="cta-actions">
+        <a href="https://prof-luis1986.github.io/CE50_ProPlanea/" target="_blank" rel="noopener noreferrer">Abrir ProPlanea</a>
+        <a
+          class="is-secondary"
+          href="https://docs.google.com/document/d/10ncbai4gEaCDEJOJafMXZD-SK_SYwv6p/export?format=docx"
+          download
+        >
+          Descargar formato de planeación (componente laboral)
+        </a>
+      </div>
     </section>
 
     <section id="turno-resumen" class="turno-summary hidden" aria-live="polite">
