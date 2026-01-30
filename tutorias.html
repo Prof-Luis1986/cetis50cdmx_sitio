@@ -234,6 +234,7 @@
       <input id="numeroControlInput" type="text" placeholder="Número de control" aria-label="Número de control" />
       <button id="searchBtn" class="btn">Buscar</button>
       <button id="loginBtn" class="btn secondary">Iniciar sesión</button>
+      <button id="logoutBtn" class="btn secondary" type="button" style="display:none;">Cerrar sesión</button>
     </div>
     <div id="searchMsg" role="status" aria-live="polite"></div>
 
@@ -269,6 +270,7 @@
     const reporteContainer = document.getElementById('reporteContainer');
     const reporteHtml = document.getElementById('reporteHtml');
     const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
     const REQUIRED_DOMAIN = '@cetis50cdmx.com';
     let isAuthorized = false;
     searchBtn.disabled = true;
@@ -283,18 +285,31 @@
         searchMsg.style.color = '#9b1d1d';
       }
     });
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await auth.signOut();
+        searchMsg.textContent = 'Sesión cerrada.';
+        searchMsg.style.color = '#555';
+      } catch (err) {
+        console.error('Error al cerrar sesión:', err);
+        searchMsg.textContent = 'Error al cerrar sesión: ' + (err.message || err);
+        searchMsg.style.color = '#9b1d1d';
+      }
+    });
 
     auth.onAuthStateChanged(async (user) => {
       if (user && hasAllowedDomain(user)) {
         isAuthorized = true;
         searchBtn.disabled = false;
         loginBtn.style.display = 'none';
+        logoutBtn.style.display = '';
         searchMsg.textContent = 'Sesión iniciada como ' + (user.email || user.displayName || 'usuario');
         searchMsg.style.color = '#155724';
       } else {
         isAuthorized = false;
         searchBtn.disabled = true;
         loginBtn.style.display = '';
+        logoutBtn.style.display = 'none';
         reporteContainer.style.display = 'none';
         reporteHtml.innerHTML = '';
         if (user && !hasAllowedDomain(user)) {

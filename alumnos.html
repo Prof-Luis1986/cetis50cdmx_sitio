@@ -172,6 +172,18 @@
       box-shadow: 0 10px 22px rgba(0,0,0,0.35);
     }
 
+    .boleta-cta a.disabled {
+      background: #e6e6e6;
+      color: #5c5c5c;
+      cursor: not-allowed;
+      opacity: 0.9;
+    }
+
+    .boleta-cta a.disabled:hover {
+      transform: none;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    }
+
     .linea-cta {
       display: flex;
       flex-wrap: wrap;
@@ -315,6 +327,7 @@
 
   <section class="boleta-login">
     <button id="alumnosLoginBtn" type="button">Iniciar sesión con Google</button>
+    <button id="alumnosLogoutBtn" type="button" style="display:none;">Cerrar sesión</button>
     <p id="alumnosLoginMsg" aria-live="polite"></p>
   </section>
 
@@ -323,7 +336,7 @@
       <h2>Consulta tu boleta digital</h2>
       <p>Ingresa tu número de control para descargar tu boleta de calificaciones en segundos.</p>
     </div>
-    <a href="boleta.html">Ir a la boleta</a>
+    <a id="boletaDisabledBtn" class="disabled" href="boleta.html" aria-disabled="true">Consultar boleta</a>
   </section>
 
   <section class="linea-cta" aria-label="Línea de captura">
@@ -361,6 +374,7 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
     const loginBtn = document.getElementById('alumnosLoginBtn');
+    const logoutBtn = document.getElementById('alumnosLogoutBtn');
     const loginMsg = document.getElementById('alumnosLoginMsg');
     const boletaCta = document.getElementById('boletaCta');
     const REQUIRED_DOMAIN = '@cetis50cdmx.com';
@@ -376,11 +390,13 @@
         loginMsg.textContent = 'Sesión iniciada como ' + (user.email || user.displayName || '');
         loginMsg.style.color = '#155724';
         loginBtn.textContent = 'Cambiar de cuenta';
+        logoutBtn.style.display = '';
       } else {
         boletaCta?.classList.add('hidden');
         loginMsg.textContent = 'Inicia sesión con tu correo @cetis50cdmx.com para acceder a la boleta.';
         loginMsg.style.color = '#9b1d1d';
         loginBtn.textContent = 'Iniciar sesión con Google';
+        logoutBtn.style.display = 'none';
       }
     }
 
@@ -400,6 +416,22 @@
       } catch (err) {
         console.error('Error en login alumnos:', err);
         loginMsg.textContent = 'Error al iniciar sesión: ' + (err.message || err);
+        loginMsg.style.color = '#9b1d1d';
+      }
+    });
+    const boletaDisabledBtn = document.getElementById('boletaDisabledBtn');
+    boletaDisabledBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      alert('La consulta de boleta estará disponible después del tercer parcial.');
+    });
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await auth.signOut();
+        loginMsg.textContent = 'Sesión cerrada.';
+        loginMsg.style.color = '#555';
+      } catch (err) {
+        console.error('Error al cerrar sesión:', err);
+        loginMsg.textContent = 'Error al cerrar sesión: ' + (err.message || err);
         loginMsg.style.color = '#9b1d1d';
       }
     });

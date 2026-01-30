@@ -346,6 +346,7 @@
         <input id="rfcInput" type="text" placeholder="RFC del docente" aria-label="RFC del docente" maxlength="13" />
         <button id="buscarHorarioBtn" class="btn">Buscar horario</button>
         <button id="loginBtn" class="btn secondary" type="button">Iniciar sesión</button>
+        <button id="logoutBtn" class="btn secondary" type="button" style="display:none;">Cerrar sesión</button>
       </div>
       <div id="searchMsg" role="status" aria-live="polite" class="no-print"></div>
 
@@ -372,6 +373,7 @@
       const rfcInput = document.getElementById('rfcInput');
       const buscarBtn = document.getElementById('buscarHorarioBtn');
       const loginBtn = document.getElementById('loginBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
       const searchMsg = document.getElementById('searchMsg');
       const horarioContainer = document.getElementById('horarioContainer');
       const horarioResultados = document.getElementById('horarioResultados');
@@ -398,6 +400,27 @@
           console.error('Error en login:', err);
           searchMsg.textContent = 'Error al iniciar sesión: ' + (err.message || err);
           searchMsg.style.color = '#9b1d1d';
+        }
+      });
+      logoutBtn.addEventListener('click', async () => {
+        try {
+          await auth.signOut();
+          searchMsg.textContent = 'Sesión cerrada.';
+          searchMsg.style.color = '#555';
+        } catch (err) {
+          console.error('Error al cerrar sesión:', err);
+          searchMsg.textContent = 'Error al cerrar sesión: ' + (err.message || err);
+          searchMsg.style.color = '#9b1d1d';
+        }
+      });
+
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          loginBtn.style.display = 'none';
+          logoutBtn.style.display = '';
+        } else {
+          loginBtn.style.display = '';
+          logoutBtn.style.display = 'none';
         }
       });
 
