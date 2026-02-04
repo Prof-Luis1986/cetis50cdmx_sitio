@@ -249,6 +249,7 @@
 
   <section id="announcements-section" aria-live="polite">
     <div id="announcements-list" class="announcements-list"></div>
+    <div id="no-announcements" style="display:none;color:#7a1e29;font-weight:600;">No hay tutorías publicadas por el momento.</div>
     <div id="load-error" style="display:none;color:#7a1e29;font-weight:600;">Error al cargar tutorías.</div>
   </section>
 </main>
@@ -560,8 +561,14 @@
     function renderAnnouncements(list) {
       const container = document.getElementById('announcements-list');
       const noEl = document.getElementById('no-announcements');
+      if (!container) return;
       container.innerHTML = '';
-      if (!list.length) { noEl.style.display='block'; return; } else noEl.style.display='none';
+      if (!list.length) {
+        if (noEl) noEl.style.display = 'block';
+        return;
+      } else if (noEl) {
+        noEl.style.display = 'none';
+      }
 
       list.forEach(aviso => {
         const card = document.createElement('div');
