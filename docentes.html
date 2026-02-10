@@ -663,13 +663,13 @@
       </div>
     </section>
 
-    <section id="turno-resumen" class="turno-summary hidden" aria-live="polite">
+    <section id="turno-resumen" class="turno-summary hidden" aria-live="polite" data-disabled="true" hidden>
       <h2>Resumen por turno</h2>
       <p id="turno-resumen-copy">Distribución actual de docentes, grupos y horas por turno operativo.</p>
       <div id="turno-resumen-grid" class="turno-resumen-grid"></div>
     </section>
 
-    <section id="docente-loads" class="docente-loads hidden" aria-live="polite">
+    <section id="docente-loads" class="docente-loads hidden" aria-live="polite" data-disabled="true" hidden>
       <h2>Clases filtradas</h2>
       <p>Explora la carga docente en curso filtrando por turno, día o docente. Esta vista permite ubicar rápidamente disponibilidad de aulas y asignaciones.</p>
       <div class="carga-filter-bar">
@@ -1138,6 +1138,7 @@
 
     async function loadTurnoResumen() {
       if (!turnoResumenSection || !turnoResumenGrid) return;
+      if (turnoResumenSection.dataset.disabled === 'true') return;
       try {
         const snapshot = await db.collection('horarios_docentes').get();
         if (snapshot.empty) {
@@ -1227,6 +1228,7 @@
 
     function applyCargaFilters() {
       if (!docenteLoadsSection) return;
+      if (docenteLoadsSection.dataset.disabled === 'true') return;
       const turnoVal = (cargaTurnoFiltro?.value || '').toLowerCase();
       const diaVal = (cargaDiaFiltro?.value || '').toLowerCase();
       const searchVal = (cargaDocenteFiltro?.value || '').toLowerCase();
@@ -1247,6 +1249,7 @@
 
     async function loadDocenteLoads() {
       if (!docenteLoadsSection) return;
+      if (docenteLoadsSection.dataset.disabled === 'true') return;
       try {
         const snapshot = await db.collection('horarios_docentes').get();
         clasesCache = [];
@@ -1291,6 +1294,7 @@
 
     function mostrarHorariosEstáticos() {
       if (!docenteLoadsSection) return;
+      if (docenteLoadsSection.dataset.disabled === 'true') return;
       docenteLoadsSection.classList.remove('hidden');
       if (cargaTableBody) {
         cargaTableBody.innerHTML = '<tr><td colspan="9">Pendiente de carga oficial.</td></tr>';
