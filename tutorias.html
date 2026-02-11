@@ -272,17 +272,47 @@
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     const ALLOWED_DOMAINS = ['@cetis50cdmx.com', '@cetis50cdmx.edu.mx'];
+    const REDIRECT_FALLBACK_CODES = new Set([
+      'auth/popup-blocked',
+      'auth/popup-closed-by-user',
+      'auth/cancelled-popup-request',
+      'auth/operation-not-supported-in-this-environment'
+    ]);
     let isAuthorized = false;
     searchBtn.disabled = true;
 
+    (async () => {
+      try {
+        await auth.getRedirectResult();
+      } catch (err) {
+        console.error('Error en resultado redirect tutorias:', err);
+        searchMsg.textContent = 'Error al regresar de Google: ' + (err.code || err.message || err);
+        searchMsg.style.color = '#9b1d1d';
+      }
+    })();
+
     loginBtn.addEventListener('click', async () => {
       try {
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        await auth.signInWithRedirect(provider);
+        await auth.signInWithPopup(provider);
       } catch (err) {
-        console.error('Error en login:', err);
-        searchMsg.textContent = 'Error al iniciar sesión: ' + (err.message || err);
+        if (REDIRECT_FALLBACK_CODES.has(err?.code)) {
+          try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            await auth.signInWithRedirect(provider);
+            return;
+          } catch (redirectErr) {
+            console.error('Error en login redirect tutorias:', redirectErr);
+            searchMsg.textContent = 'Error al iniciar sesión: ' + (redirectErr.code || redirectErr.message || redirectErr);
+            searchMsg.style.color = '#9b1d1d';
+            return;
+          }
+        }
+        console.error('Error en login tutorias:', err);
+        searchMsg.textContent = 'Error al iniciar sesión: ' + (err.code || err.message || err);
         searchMsg.style.color = '#9b1d1d';
       }
     });
@@ -304,7 +334,9 @@
         searchBtn.disabled = false;
         loginBtn.style.display = 'none';
         logoutBtn.style.display = '';
-        searchMsg.textContent = 'Sesión iniciada como ' + (user.email || user.displayName || 'usuario');
+        const email = user.email || '';
+        const nombre = user.displayName || (email ? email.split('@')[0] : 'usuario');
+        searchMsg.textContent = 'Sesión iniciada como ' + email + '. Bienvenido(a), ' + nombre + '.';
         searchMsg.style.color = '#155724';
       } else {
         isAuthorized = false;

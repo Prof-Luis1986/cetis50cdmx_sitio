@@ -268,20 +268,50 @@
     const logoutBtn = document.getElementById('logoutBtn');
     const LOGO_URL = 'https://raw.githubusercontent.com/Prof-Luis1986/recursos-cetis50/refs/heads/main/logo-cetis50.jpg';
     const ALLOWED_DOMAINS = ['@cetis50cdmx.com', '@cetis50cdmx.edu.mx'];
+    const REDIRECT_FALLBACK_CODES = new Set([
+      'auth/popup-blocked',
+      'auth/popup-closed-by-user',
+      'auth/cancelled-popup-request',
+      'auth/operation-not-supported-in-this-environment'
+    ]);
     const AUTHORITIES = {
       director: 'EDGAR OAXACA HERNÁNDEZ'
     };
     let isAuthorized = false;
     searchBtn.disabled = true;
 
+    (async () => {
+      try {
+        await auth.getRedirectResult();
+      } catch (err) {
+        console.error('Error en resultado redirect boleta:', err);
+        searchMsg.textContent = 'Error al regresar de Google: ' + (err.code || err.message || err);
+        searchMsg.style.color = '#9b1d1d';
+      }
+    })();
+
     loginBtn.addEventListener('click', async () => {
       try {
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        await auth.signInWithRedirect(provider);
+        await auth.signInWithPopup(provider);
       } catch (err) {
-        console.error('Error en login:', err);
-        searchMsg.textContent = 'Error al iniciar sesión: ' + (err.message || err);
+        if (REDIRECT_FALLBACK_CODES.has(err?.code)) {
+          try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            await auth.signInWithRedirect(provider);
+            return;
+          } catch (redirectErr) {
+            console.error('Error en login redirect boleta:', redirectErr);
+            searchMsg.textContent = 'Error al iniciar sesión: ' + (redirectErr.code || redirectErr.message || redirectErr);
+            searchMsg.style.color = '#9b1d1d';
+            return;
+          }
+        }
+        console.error('Error en login boleta:', err);
+        searchMsg.textContent = 'Error al iniciar sesión: ' + (err.code || err.message || err);
         searchMsg.style.color = '#9b1d1d';
       }
     });

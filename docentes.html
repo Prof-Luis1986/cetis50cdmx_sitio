@@ -53,6 +53,15 @@
       color: #333;
       line-height: 1.6;
     }
+    #docentes-session-info {
+      margin: 8px 0 16px;
+      padding: 10px 12px;
+      border-left: 4px solid #2f7d32;
+      background: #eef9ef;
+      color: #1f4d22;
+      border-radius: 8px;
+      font-weight: 600;
+    }
     #logoutDocentesBtn {
       margin-top: 30px;
       background-color: #555;
@@ -640,6 +649,7 @@
   <!-- Contenido real para docentes (oculto hasta que verifiquemos) -->
   <section id="docentes-contenido" class="hidden">
     <h1 class="page-title">Información para Docentes</h1>
+    <p id="docentes-session-info" aria-live="polite"></p>
 
     <p style="margin-bottom: 12px; color:#333;">
       Bienvenido(a) docente. Aquí encontrarás la información interna, recursos,
@@ -824,6 +834,7 @@
     const loginBtn = document.getElementById('loginDocentesBtn');
     const logoutBtn = document.getElementById('logoutDocentesBtn');
     const msgEl = document.getElementById('docentes-msg');
+    const sessionInfoEl = document.getElementById('docentes-session-info');
     const horariosCta = document.getElementById('horariosCta');
     const attendanceCta = document.getElementById('attendanceCta');
     const turnoResumenSection = document.getElementById('turno-resumen');
@@ -836,6 +847,12 @@
 
     const DOMINIO_INSTITUCIONAL = 'cetis50cdmx.com';
     const DOMINIO_ALTERNATIVO = 'cetis50cdmx.edu.mx';
+    const REDIRECT_FALLBACK_CODES = new Set([
+      'auth/popup-blocked',
+      'auth/popup-closed-by-user',
+      'auth/cancelled-popup-request',
+      'auth/operation-not-supported-in-this-environment'
+    ]);
 
     // Contenedor lista textual
     const listaWrap = document.getElementById('lista-docentes-announcements');
@@ -850,6 +867,16 @@
     const modalChips = document.getElementById('modal-chips');
     const modalLink = document.getElementById('modal-link');
     const modalVideo = document.getElementById('modal-video');
+
+    (async () => {
+      try {
+        await auth.getRedirectResult();
+      } catch (err) {
+        console.error('Error en resultado redirect docentes:', err);
+        msgEl.textContent = 'Error al regresar de Google: ' + (err.code || err.message || err);
+        msgEl.style.color = '#9b1d1d';
+      }
+    })();
 
     function openModal(data) {
       modalTitle.textContent = data.titulo;
@@ -910,6 +937,7 @@
       accesoSection.classList.remove('hidden');
       horariosCta?.classList.add('hidden');
       attendanceCta?.classList.add('hidden');
+      if (sessionInfoEl) sessionInfoEl.textContent = '';
       if (mensaje) {
         msgEl.textContent = mensaje;
         msgEl.style.color = '#9b1d1d';
@@ -918,12 +946,17 @@
       }
     }
 
-    function mostrarContenido() {
+    function mostrarContenido(user) {
       msgEl.textContent = '';
       accesoSection.classList.add('hidden');
       contenidoSection.classList.remove('hidden');
       horariosCta?.classList.remove('hidden');
       attendanceCta?.classList.remove('hidden');
+      if (sessionInfoEl) {
+        const email = user?.email || '';
+        const nombre = user?.displayName || (email ? email.split('@')[0] : 'docente');
+        sessionInfoEl.textContent = `Sesion iniciada como ${email}. Bienvenido(a), ${nombre}.`;
+      }
     }
 
     // --- Verificar permisos docente ---
@@ -945,35 +978,46 @@
       }
 
       try {
-        const userDocRef = db.collection('users').doc(user.uid);
-        const userDoc = await userDocRef.get();
+        const tokenResult = await user.getIdTokenResult(true);
+        const claims = tokenResult?.claims || {};
+        const esDocenteClaim =
+          claims.role === 'docente' || claims.isDocente === true || claims.isDocente === 'true';
 
-        if (!userDoc.exists) {
-          await userDocRef.set(
-            {
-              email: user.email,
-              nombre: user.displayName || user.email,
-              esDocente: false,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            },
-            { merge: true }
-          );
+        const esDocenteData = (data) => (
+          data &&
+          (
+            data.esDocente === true ||
+            data.isDocente === true ||
+            data.role === 'docente'
+          )
+        );
 
-          return {
-            permitido: false,
-            mensaje: 'Tu cuenta está pendiente de aprobación como docente.'
-          };
-        }
-
-        const userData = userDoc.data();
-        if (userData.esDocente === true) {
+        if (esDocenteClaim) {
           return { permitido: true, mensaje: '' };
-        } else {
+        }
+
+        const byUid = await db.collection('users').doc(user.uid).get();
+        if (byUid.exists && esDocenteData(byUid.data())) {
+          return { permitido: true, mensaje: '' };
+        }
+
+        // Diagnóstico: hay marca docente en users, pero falta claim
+        const byEmail = await db
+          .collection('users')
+          .where('email', '==', user.email)
+          .limit(1)
+          .get();
+        if (!byEmail.empty && esDocenteData(byEmail.docs[0].data())) {
           return {
             permitido: false,
-            mensaje: 'Tu cuenta no está autorizada como docente. Contacta al administrador.'
+            mensaje: 'Tu usuario aparece como docente en users, pero aún falta activar el claim isDocente en Authentication.'
           };
         }
+
+        return {
+          permitido: false,
+          mensaje: 'Tu cuenta no está autorizada como docente. Contacta al administrador para asignar claim isDocente.'
+        };
       } catch (e) {
         console.error('Error al verificar permisos de docente en Firestore:', e);
         return { permitido: false, mensaje: 'Error al verificar tus permisos. Intenta de nuevo.' };
@@ -1454,7 +1498,7 @@
 
       const { permitido, mensaje } = await verificarPermisosDocente(user);
       if (permitido) {
-        mostrarContenido();
+        mostrarContenido(user);
         loadInstitutionalSchedule();
         loadTurnoResumen();
         loadDocenteLoads();
@@ -1473,13 +1517,27 @@
     loginBtn.addEventListener('click', async () => {
       msgEl.textContent = '';
       try {
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        await auth.signInWithRedirect(provider);
+        await auth.signInWithPopup(provider);
       } catch (err) {
+        if (REDIRECT_FALLBACK_CODES.has(err?.code)) {
+          try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            await auth.signInWithRedirect(provider);
+            return;
+          } catch (redirectErr) {
+            console.error('Error al iniciar sesión (redirect):', redirectErr);
+            msgEl.textContent = 'Error al iniciar sesión: ' + (redirectErr.code || redirectErr.message || 'Verifica tu conexión.');
+            msgEl.style.color = '#9b1d1d';
+            return;
+          }
+        }
         console.error('Error al iniciar sesión:', err);
         msgEl.textContent =
-          'Error al iniciar sesión: ' + (err.message || 'Verifica tu conexión.');
+          'Error al iniciar sesión: ' + (err.code || err.message || 'Verifica tu conexión.');
         msgEl.style.color = '#9b1d1d';
       }
     });
