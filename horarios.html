@@ -390,12 +390,10 @@
       loginBtn.addEventListener('click', async () => {
         try {
           const provider = new firebase.auth.GoogleAuthProvider();
-          await auth.signInWithPopup(provider);
-          const user = auth.currentUser;
-          if (user) {
-            searchMsg.textContent = 'Sesión iniciada como ' + (user.email || user.displayName || 'usuario');
-            searchMsg.style.color = '#155724';
-          }
+          provider.setCustomParameters({ prompt: 'select_account' });
+          searchMsg.textContent = 'Redirigiendo a Google...';
+          searchMsg.style.color = '#555';
+          await auth.signInWithRedirect(provider);
         } catch (err) {
           console.error('Error en login:', err);
           searchMsg.textContent = 'Error al iniciar sesión: ' + (err.message || err);

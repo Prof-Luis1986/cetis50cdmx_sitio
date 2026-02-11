@@ -835,6 +835,7 @@
     const cargaTableBody = document.getElementById('carga-table-body');
 
     const DOMINIO_INSTITUCIONAL = 'cetis50cdmx.com';
+    const DOMINIO_ALTERNATIVO = 'cetis50cdmx.edu.mx';
 
     // Contenedor lista textual
     const listaWrap = document.getElementById('lista-docentes-announcements');
@@ -932,10 +933,14 @@
       }
 
       const dominio = user.email.split('@')[1] || '';
-      if (dominio.toLowerCase() !== DOMINIO_INSTITUCIONAL.toLowerCase()) {
+      const dominioNormalizado = dominio.toLowerCase();
+      if (
+        dominioNormalizado !== DOMINIO_INSTITUCIONAL.toLowerCase() &&
+        dominioNormalizado !== DOMINIO_ALTERNATIVO.toLowerCase()
+      ) {
         return {
           permitido: false,
-          mensaje: `Solo se permite el dominio @${DOMINIO_INSTITUCIONAL}.`
+          mensaje: `Solo se permite el dominio @${DOMINIO_INSTITUCIONAL} o @${DOMINIO_ALTERNATIVO}.`
         };
       }
 
@@ -1469,7 +1474,8 @@
       msgEl.textContent = '';
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
-        await auth.signInWithPopup(provider);
+        provider.setCustomParameters({ prompt: 'select_account' });
+        await auth.signInWithRedirect(provider);
       } catch (err) {
         console.error('Error al iniciar sesión:', err);
         msgEl.textContent =

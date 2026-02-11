@@ -390,11 +390,12 @@
     const logoutBtn = document.getElementById('alumnosLogoutBtn');
     const loginMsg = document.getElementById('alumnosLoginMsg');
     const boletaCta = document.getElementById('boletaCta');
-    const REQUIRED_DOMAIN = '@cetis50cdmx.com';
+    const ALLOWED_DOMAINS = ['@cetis50cdmx.com', '@cetis50cdmx.edu.mx'];
 
     function hasAllowedDomain(user){
       if (!user || !user.email) return false;
-      return user.email.toLowerCase().endsWith(REQUIRED_DOMAIN);
+      const email = user.email.toLowerCase();
+      return ALLOWED_DOMAINS.some(domain => email.endsWith(domain));
     }
 
     function updateBoletaAccess(user){
@@ -406,7 +407,7 @@
         logoutBtn.style.display = '';
       } else {
         boletaCta?.classList.add('hidden');
-        loginMsg.textContent = 'Inicia sesión con tu correo @cetis50cdmx.com para acceder a la boleta.';
+        loginMsg.textContent = 'Inicia sesión con tu correo institucional (@cetis50cdmx.com o @cetis50cdmx.edu.mx) para acceder a la boleta.';
         loginMsg.style.color = '#9b1d1d';
         loginBtn.textContent = 'Iniciar sesión con Google';
         logoutBtn.style.display = 'none';
@@ -425,7 +426,8 @@
     loginBtn.addEventListener('click', async () => {
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
-        await auth.signInWithPopup(provider);
+        provider.setCustomParameters({ prompt: 'select_account' });
+        await auth.signInWithRedirect(provider);
       } catch (err) {
         console.error('Error en login alumnos:', err);
         loginMsg.textContent = 'Error al iniciar sesión: ' + (err.message || err);

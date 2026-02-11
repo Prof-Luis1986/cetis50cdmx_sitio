@@ -35,12 +35,14 @@ service cloud.firestore {
 
     function isAlumno() {
       return request.auth != null &&
-        request.auth.token.email.matches('.*@cetis50cdmx\\.com$');
+        request.auth.token.email != null &&
+        request.auth.token.email.matches('(?i)^.*@cetis50cdmx\\.(com|edu\\.mx)$');
     }
 
     function isDocente() {
       return request.auth != null &&
-        request.auth.token.email.matches('.*@cetis50cdmx\\.com$') &&
+        request.auth.token.email != null &&
+        request.auth.token.email.matches('(?i)^.*@cetis50cdmx\\.(com|edu\\.mx)$') &&
         (request.auth.token.role == 'docente' ||
          request.auth.token.isDocente == true);
     }
