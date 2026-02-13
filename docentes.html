@@ -562,6 +562,48 @@
       height: 100%;
       border: 0;
     }
+    .pdf-responsive {
+      margin-top: 8px;
+      height: 65vh;
+      max-height: 720px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      border: 1px solid rgba(27,40,71,0.15);
+      background: #f5f7fb;
+    }
+    .pdf-responsive iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      transform-origin: top center;
+      transition: transform 0.15s ease;
+    }
+    .pdf-toolbar {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .pdf-toolbar button,
+    .pdf-toolbar a {
+      border: 0;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      background: #1b2847;
+      color: #fff;
+    }
+    .pdf-toolbar .pdf-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #1b2847;
+      margin-right: 2px;
+    }
 
     @media (max-width: 700px) {
       .announcement-card.docentes-card {
@@ -569,6 +611,9 @@
       }
       .announcement-logo {
         display: none;
+      }
+      .pdf-responsive {
+        height: 58vh;
       }
       .inst-cards-container {
         grid-template-columns: 1fr;
@@ -878,6 +923,108 @@
       }
     })();
 
+    function extractDriveFileId(rawUrl) {
+      try {
+        const url = new URL(rawUrl);
+        const filePathMatch = url.pathname.match(/\/file\/d\/([^/]+)/i);
+        if (filePathMatch && filePathMatch[1]) return filePathMatch[1];
+        const openId = url.searchParams.get('id');
+        if (openId) return openId;
+      } catch (_) {}
+      return '';
+    }
+
+    function getPdfPreviewUrl(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return '';
+      const link = rawUrl.trim();
+      if (!/^https?:\/\//i.test(link)) return '';
+      if (/\.pdf(?:[?#].*)?$/i.test(link)) return link;
+
+      if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
+        if (/\/preview(?:[?#].*)?$/i.test(link)) return link;
+        const fileId = extractDriveFileId(link);
+        if (fileId) return `https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview`;
+      }
+      return '';
+    }
+
+    function getPdfDownloadUrl(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return '';
+      const link = rawUrl.trim();
+      if (!/^https?:\/\//i.test(link)) return '';
+      if (/\.pdf(?:[?#].*)?$/i.test(link)) return link;
+      if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
+        const fileId = extractDriveFileId(link);
+        if (fileId) return `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}`;
+      }
+      return '';
+    }
+
+    function getYouTubeEmbedUrl(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return '';
+      try {
+        const url = new URL(rawUrl);
+        if (url.hostname.includes('youtu.be')) {
+          const id = url.pathname.split('/').filter(Boolean)[0];
+          if (id) return `https://www.youtube.com/embed/${encodeURIComponent(id)}`;
+        }
+        if (url.hostname.includes('youtube.com')) {
+          const id = url.searchParams.get('v');
+          if (id) return `https://www.youtube.com/embed/${encodeURIComponent(id)}`;
+        }
+      } catch (_) {}
+      return '';
+    }
+
+    function attachPdfControls(rootEl) {
+      const frame = rootEl.querySelector('[data-pdf-frame]');
+      const zoomOut = rootEl.querySelector('[data-pdf-zoom-out]');
+      const zoomIn = rootEl.querySelector('[data-pdf-zoom-in]');
+      const reset = rootEl.querySelector('[data-pdf-reset]');
+      const fullscreen = rootEl.querySelector('[data-pdf-fullscreen]');
+      const zoomLabel = rootEl.querySelector('[data-pdf-zoom-label]');
+      const pdfBox = rootEl.querySelector('.pdf-responsive');
+
+      if (!frame || !zoomOut || !zoomIn || !reset || !fullscreen || !zoomLabel || !pdfBox) return;
+
+      let zoom = 1;
+      const updateZoom = () => {
+        frame.style.transform = `scale(${zoom})`;
+        zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+      };
+
+      zoomOut.addEventListener('click', () => {
+        zoom = Math.max(0.7, Number((zoom - 0.1).toFixed(2)));
+        updateZoom();
+      });
+      zoomIn.addEventListener('click', () => {
+        zoom = Math.min(2.2, Number((zoom + 0.1).toFixed(2)));
+        updateZoom();
+      });
+      reset.addEventListener('click', () => {
+        zoom = 1;
+        updateZoom();
+      });
+      fullscreen.addEventListener('click', () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen?.();
+        } else {
+          pdfBox.requestFullscreen?.();
+        }
+      });
+      updateZoom();
+    }
+
+    function isInstitutionalEmail(email) {
+      if (!email) return false;
+      const dominio = String(email).split('@')[1] || '';
+      const normalizado = dominio.toLowerCase();
+      return (
+        normalizado === DOMINIO_INSTITUCIONAL.toLowerCase() ||
+        normalizado === DOMINIO_ALTERNATIVO.toLowerCase()
+      );
+    }
+
     function openModal(data) {
       modalTitle.textContent = data.titulo;
       modalDate.textContent = data.fecha;
@@ -896,27 +1043,61 @@
       // enlace
       modalLink.innerHTML = '';
       if (data.linkUrl) {
-        modalLink.innerHTML = `
-          <a href="${data.linkUrl}" target="_blank" rel="noopener" class="chip chip-link">
-            🔗 Ir al enlace
-          </a>
-        `;
+        const linkChip = document.createElement('a');
+        linkChip.href = data.linkUrl;
+        linkChip.target = '_blank';
+        linkChip.rel = 'noopener';
+        linkChip.className = 'chip chip-link';
+        linkChip.textContent = '🔗 Ir al enlace';
+        modalLink.appendChild(linkChip);
       }
 
-      // video youtube
+      // video youtube o preview pdf
       modalVideo.innerHTML = '';
-      if (data.linkUrl && data.linkUrl.includes('youtube.com/watch')) {
-        const id = data.linkUrl.split('v=')[1]?.split('&')[0];
-        if (id) {
+      const youtubeEmbedUrl = getYouTubeEmbedUrl(data.linkUrl);
+      const pdfPreviewUrl = getPdfPreviewUrl(data.linkUrl);
+      const pdfDownloadUrl = getPdfDownloadUrl(data.linkUrl);
+      if (youtubeEmbedUrl) {
+        modalVideo.innerHTML = `
+          <div class="video-responsive">
+            <iframe src="${youtubeEmbedUrl}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+          </div>
+        `;
+      } else if (pdfPreviewUrl) {
+        const previewChip = document.createElement('a');
+        previewChip.href = '#';
+        previewChip.className = 'chip chip-link';
+        previewChip.style.marginLeft = '8px';
+        previewChip.textContent = '👁️ Previsualizar PDF';
+        modalLink.appendChild(previewChip);
+
+        const renderPdf = () => {
           modalVideo.innerHTML = `
-            <div class="video-responsive">
-              <iframe src="https://www.youtube.com/embed/${id}"
-                      frameborder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowfullscreen></iframe>
+            <div class="pdf-toolbar">
+              <span class="pdf-label">Visor PDF</span>
+              <button type="button" data-pdf-zoom-out>-</button>
+              <button type="button" data-pdf-zoom-in>+</button>
+              <button type="button" data-pdf-reset>100%</button>
+              <button type="button" data-pdf-fullscreen>Pantalla completa</button>
+              <span class="pdf-label" data-pdf-zoom-label>100%</span>
+              <a href="${data.linkUrl || pdfPreviewUrl}" target="_blank" rel="noopener">Abrir en nueva pestaña</a>
+              ${pdfDownloadUrl ? `<a href="${pdfDownloadUrl}" target="_blank" rel="noopener" download>Descargar PDF</a>` : ''}
+            </div>
+            <div class="pdf-responsive">
+              <iframe src="${pdfPreviewUrl}" title="Previsualización de PDF" loading="lazy" data-pdf-frame></iframe>
             </div>
           `;
-        }
+          attachPdfControls(modalVideo);
+        };
+
+        previewChip.addEventListener('click', (event) => {
+          event.preventDefault();
+          renderPdf();
+        });
+        renderPdf();
       }
 
       announcementModal.style.display = 'flex';
@@ -1509,7 +1690,17 @@
           applyCargaFilters();
         });
       } else {
-        mostrarAcceso(mensaje);
+        if (isInstitutionalEmail(user.email)) {
+          mostrarContenido(user);
+          loadInstitutionalSchedule();
+          loadTurnoResumen();
+          loadDocenteLoads();
+          if (sessionInfoEl) {
+            sessionInfoEl.textContent += ' Acceso parcial: tu cuenta necesita validación docente para ver todos los módulos.';
+          }
+        } else {
+          mostrarAcceso(mensaje);
+        }
       }
     });
 

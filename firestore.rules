@@ -20,9 +20,9 @@ service cloud.firestore {
       allow create, update, delete: if esCorreoCetis50();
     }
 
-    // Avisos públicos (alumnos y visitantes)
+    // Avisos: públicos por categoría; alumnos requiere cuenta institucional
     match /announcements/{docId} {
-      allow read: if true;
+      allow read: if isAvisoPublico() || (isAvisoAlumnos() && isCuentaInstitucional());
       allow create, update, delete: if esCorreoCetis50();
     }
 
@@ -52,6 +52,20 @@ service cloud.firestore {
 
     function isCuentaInstitucional() {
       return esCorreoCetis50();
+    }
+
+    function avisoCategory() {
+      return (resource.data.category is string)
+        ? resource.data.category.lower()
+        : '';
+    }
+
+    function isAvisoPublico() {
+      return avisoCategory() in ['general', 'eventos', 'vinculacion'];
+    }
+
+    function isAvisoAlumnos() {
+      return avisoCategory() == 'alumnos';
     }
 
     function isAdmin() {

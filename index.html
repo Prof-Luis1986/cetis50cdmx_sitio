@@ -412,6 +412,7 @@
 
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body data-page-id="index">
@@ -583,6 +584,11 @@
         <input id="search-input" type="search" placeholder="Buscar por título o contenido..." aria-label="Buscar avisos" />
       </label>
     </section>
+    <section style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 2px;">
+      <button id="indexLoginBtn" type="button" class="btn-primary">Iniciar sesión para avisos de alumnos</button>
+      <button id="indexLogoutBtn" type="button" class="btn-primary" style="display:none;background:#555;">Cerrar sesión</button>
+      <span id="indexAuthMsg" style="font-weight:600;color:#7a1e29;"></span>
+    </section>
 
     <!-- Lista de avisos -->
     <section id="announcements-section" aria-live="polite">
@@ -592,7 +598,7 @@
     </section>
 
     <footer class="footer-note">
-      Los avisos se muestran públicamente en la portada. Para publicar, accede al panel administrativo.
+      Los avisos de alumnos requieren cuenta institucional. Los avisos generales se muestran en la portada.
     </footer>
   </main>
 
@@ -704,7 +710,152 @@
 
     // Firestore referencia
     const db = (window.db && window.db.collection) ? window.db : firebase.firestore();
+    const auth = firebase.auth();
     let lastList = [];
+    let unsubscribeAvisos = [];
+    let allowInternalAnnouncements = false;
+    const PUBLIC_CATEGORIES = ['general', 'eventos', 'vinculacion'];
+    const ALLOWED_DOMAINS = ['@cetis50cdmx.com', '@cetis50cdmx.edu.mx'];
+    const REDIRECT_FALLBACK_CODES = new Set([
+      'auth/popup-blocked',
+      'auth/popup-closed-by-user',
+      'auth/cancelled-popup-request',
+      'auth/operation-not-supported-in-this-environment'
+    ]);
+    const indexLoginBtn = document.getElementById('indexLoginBtn');
+    const indexLogoutBtn = document.getElementById('indexLogoutBtn');
+    const indexAuthMsg = document.getElementById('indexAuthMsg');
+
+    function hasAllowedDomain(user) {
+      if (!user || !user.email) return false;
+      const email = user.email.toLowerCase();
+      return ALLOWED_DOMAINS.some(domain => email.endsWith(domain));
+    }
+
+    function getPublicAnnouncementsQuery(limit = 200) {
+      return db.collection('announcements')
+        .where('category', 'in', PUBLIC_CATEGORIES)
+        .orderBy('createdAt', 'desc')
+        .limit(limit);
+    }
+
+    function getAlumnosAnnouncementsQuery(limit = 200) {
+      return db.collection('announcements')
+        .where('category', '==', 'alumnos')
+        .orderBy('createdAt', 'desc')
+        .limit(limit);
+    }
+
+    function normalizeCategory(category) {
+      return String(category || '').trim().toLowerCase();
+    }
+
+    function combinarAvisosSnapshots(snapshots) {
+      const byId = new Map();
+      snapshots.forEach(snapshot => {
+        construirAvisosDesdeSnapshot(snapshot).forEach(aviso => {
+          const existing = byId.get(aviso.id);
+          const currentTs = aviso._createdAtDate ? aviso._createdAtDate.getTime() : 0;
+          const existingTs = existing && existing._createdAtDate ? existing._createdAtDate.getTime() : 0;
+          if (!existing || currentTs >= existingTs) {
+            byId.set(aviso.id, aviso);
+          }
+        });
+      });
+
+      return Array.from(byId.values()).sort((a, b) => {
+        const ta = a._createdAtDate ? a._createdAtDate.getTime() : 0;
+        const tb = b._createdAtDate ? b._createdAtDate.getTime() : 0;
+        return tb - ta;
+      });
+    }
+
+    async function loadMergedAnnouncementsOnce(limit = 200) {
+      const queries = [getPublicAnnouncementsQuery(limit).get()];
+      if (allowInternalAnnouncements) {
+        queries.push(getAlumnosAnnouncementsQuery(limit).get());
+      }
+      const snapshots = await Promise.all(queries);
+      return combinarAvisosSnapshots(snapshots);
+    }
+
+    function updateIndexAuthUi(user) {
+      if (user && allowInternalAnnouncements) {
+        const email = user.email || '';
+        indexAuthMsg.textContent = `Sesión institucional activa (${email}). Ya puedes ver avisos de alumnos.`;
+        indexAuthMsg.style.color = '#155724';
+        indexLogoutBtn.style.display = '';
+        indexLoginBtn.textContent = 'Cambiar cuenta';
+      } else {
+        indexAuthMsg.textContent = 'Inicia sesión con tu cuenta institucional para ver avisos de alumnos.';
+        indexAuthMsg.style.color = '#7a1e29';
+        indexLogoutBtn.style.display = 'none';
+        indexLoginBtn.textContent = 'Iniciar sesión para avisos de alumnos';
+      }
+    }
+
+    async function refreshAnnouncementsBySession() {
+      iniciarSuscripcionAvisos(200);
+      if (typeof window.cargarAvisosIndexPublico === 'function') {
+        await window.cargarAvisosIndexPublico();
+      }
+    }
+
+    (async () => {
+      try {
+        await auth.getRedirectResult();
+      } catch (err) {
+        console.error('Error en resultado redirect index:', err);
+      }
+    })();
+
+    auth.onAuthStateChanged(async user => {
+      if (user && !hasAllowedDomain(user)) {
+        await auth.signOut();
+        allowInternalAnnouncements = false;
+        updateIndexAuthUi(null);
+      } else {
+        allowInternalAnnouncements = !!(user && hasAllowedDomain(user));
+        updateIndexAuthUi(user);
+      }
+      await refreshAnnouncementsBySession();
+    });
+
+    indexLoginBtn?.addEventListener('click', async () => {
+      try {
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        await auth.signInWithPopup(provider);
+      } catch (err) {
+        if (REDIRECT_FALLBACK_CODES.has(err?.code)) {
+          try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            await auth.signInWithRedirect(provider);
+            return;
+          } catch (redirectErr) {
+            console.error('Error en login redirect index:', redirectErr);
+            indexAuthMsg.textContent = `Error al iniciar sesión: ${redirectErr.code || redirectErr.message || redirectErr}`;
+            indexAuthMsg.style.color = '#9b1d1d';
+            return;
+          }
+        }
+        console.error('Error en login index:', err);
+        indexAuthMsg.textContent = `Error al iniciar sesión: ${err.code || err.message || err}`;
+        indexAuthMsg.style.color = '#9b1d1d';
+      }
+    });
+
+    indexLogoutBtn?.addEventListener('click', async () => {
+      try {
+        await auth.signOut();
+      } catch (err) {
+        console.error('Error al cerrar sesión en index:', err);
+        indexAuthMsg.textContent = `Error al cerrar sesión: ${err.code || err.message || err}`;
+        indexAuthMsg.style.color = '#9b1d1d';
+      }
+    });
 
     function playAvisoAudio() {
       const audio = document.getElementById('notification-audio');
@@ -716,6 +867,82 @@
           console.warn('No se pudo reproducir el sonido del aviso:', err);
         });
       }
+    }
+
+    function extractGoogleDriveFileId(link) {
+      if (!link) return null;
+      const directMatch = link.match(/\/file\/d\/([^/]+)/i);
+      if (directMatch && directMatch[1]) return directMatch[1];
+      const idMatch = link.match(/[?&]id=([^&]+)/i);
+      return idMatch && idMatch[1] ? idMatch[1] : null;
+    }
+
+    function getPdfPreviewUrl(link) {
+      if (!link) return null;
+      if (/\.pdf(?:[?#].*)?$/i.test(link)) return link;
+
+      if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
+        const fileId = extractGoogleDriveFileId(link);
+        if (fileId) return `https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview`;
+      }
+
+      return null;
+    }
+
+    function getPdfDownloadUrl(link) {
+      if (!link) return null;
+      if (/\.pdf(?:[?#].*)?$/i.test(link)) return link;
+      if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
+        const fileId = extractGoogleDriveFileId(link);
+        if (fileId) return `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}`;
+      }
+      return null;
+    }
+
+    function attachPdfControls(rootEl) {
+      const frame = rootEl.querySelector('[data-pdf-frame]');
+      const zoomOut = rootEl.querySelector('[data-pdf-zoom-out]');
+      const zoomIn = rootEl.querySelector('[data-pdf-zoom-in]');
+      const reset = rootEl.querySelector('[data-pdf-reset]');
+      const fullscreen = rootEl.querySelector('[data-pdf-fullscreen]');
+      const zoomLabel = rootEl.querySelector('[data-pdf-zoom-label]');
+      const pdfBox = rootEl.querySelector('[data-pdf-box]');
+
+      if (!frame || !zoomOut || !zoomIn || !reset || !fullscreen || !zoomLabel || !pdfBox) return;
+
+      let zoom = 1;
+      const min = 0.5;
+      const max = 2.5;
+
+      const applyZoom = () => {
+        frame.style.transformOrigin = 'top left';
+        frame.style.transform = `scale(${zoom})`;
+        frame.style.width = `${100 / zoom}%`;
+        frame.style.height = `${100 / zoom}%`;
+        zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+      };
+
+      zoomOut.addEventListener('click', () => {
+        zoom = Math.max(min, Number((zoom - 0.1).toFixed(2)));
+        applyZoom();
+      });
+      zoomIn.addEventListener('click', () => {
+        zoom = Math.min(max, Number((zoom + 0.1).toFixed(2)));
+        applyZoom();
+      });
+      reset.addEventListener('click', () => {
+        zoom = 1;
+        applyZoom();
+      });
+      fullscreen.addEventListener('click', () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen?.();
+        } else {
+          pdfBox.requestFullscreen?.();
+        }
+      });
+
+      applyZoom();
     }
 
     // ==================== MODAL DETALLE AVISO (clic en tarjeta) ====================
@@ -810,14 +1037,42 @@
           `).join('')
         : '<span style="color:#666;">Todas las especialidades</span>';
 
+      const pdfPreviewUrl = getPdfPreviewUrl(avisoData.linkUrl);
+      const pdfDownloadUrl = getPdfDownloadUrl(avisoData.linkUrl);
       const enlaceHTML = avisoData.linkUrl
         ? `
           <div style="margin-top:15px;">
             <a href="${escapeAttr(avisoData.linkUrl)}" target="_blank" rel="noopener"
                style="color:#7a1e29;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
-              🔗 Ver más información
+              🔗 Abrir en nueva pestaña
             </a>
           </div>
+        `
+        : '';
+
+      const pdfPreviewHTML = pdfPreviewUrl
+        ? `
+          <section style="margin:18px 0 0 0;">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;">
+              <strong style="color:#1b2847;">Vista previa PDF:</strong>
+              <button type="button" data-pdf-zoom-out style="border:0;border-radius:999px;padding:6px 12px;background:#1b2847;color:#fff;font-weight:700;cursor:pointer;">-</button>
+              <button type="button" data-pdf-reset style="border:0;border-radius:999px;padding:6px 12px;background:#1b2847;color:#fff;font-weight:700;cursor:pointer;">100%</button>
+              <button type="button" data-pdf-zoom-in style="border:0;border-radius:999px;padding:6px 12px;background:#1b2847;color:#fff;font-weight:700;cursor:pointer;">+</button>
+              <button type="button" data-pdf-fullscreen style="border:0;border-radius:999px;padding:6px 12px;background:#1b2847;color:#fff;font-weight:700;cursor:pointer;">Pantalla completa</button>
+              <span data-pdf-zoom-label style="font-size:0.85rem;font-weight:700;color:#1b2847;">100%</span>
+              <a href="${escapeAttr(avisoData.linkUrl || pdfPreviewUrl)}" target="_blank" rel="noopener" style="text-decoration:none;border-radius:999px;padding:6px 12px;background:#7a1e29;color:#fff;font-weight:700;">Abrir en nueva pestaña</a>
+              ${pdfDownloadUrl ? `<a href="${escapeAttr(pdfDownloadUrl)}" target="_blank" rel="noopener" download style="text-decoration:none;border-radius:999px;padding:6px 12px;background:#1f6f3e;color:#fff;font-weight:700;">Descargar PDF</a>` : ''}
+            </div>
+            <div data-pdf-box style="height:62vh;min-height:320px;border:1px solid #d8dce6;border-radius:10px;overflow:auto;background:#f5f7fb;">
+              <iframe
+                src="${escapeAttr(pdfPreviewUrl)}"
+                title="Vista previa de PDF"
+                loading="lazy"
+                data-pdf-frame
+                style="width:100%;height:100%;border:0;background:#fff;"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+          </section>
         `
         : '';
 
@@ -879,6 +1134,8 @@
             ${escapeHtml(avisoData.content || '')}
           </div>
 
+          ${pdfPreviewHTML}
+
           ${enlaceHTML}
 
           <hr style="border:none;border-top:1px solid #eee;margin:22px 0;">
@@ -918,6 +1175,7 @@
 
       modal.appendChild(modalContent);
       document.body.appendChild(modal);
+      if (pdfPreviewUrl) attachPdfControls(modalContent);
       playAvisoAudio();
 
       const btnCerrar = document.getElementById('cerrar-modal-aviso');
@@ -1006,12 +1264,9 @@
 
     async function cargarAvisos(categoria = null, limit = 200) {
       try {
-        const snapshot = await db.collection('announcements')
-          .orderBy('createdAt', 'desc')
-          .limit(limit)
-          .get();
-
-        return construirAvisosDesdeSnapshot(snapshot, categoria);
+        const avisos = await loadMergedAnnouncementsOnce(limit);
+        if (!categoria) return avisos;
+        return avisos.filter(a => normalizeCategory(a.category) === normalizeCategory(categoria));
       } catch (err) {
         throw err;
       }
@@ -1157,17 +1412,42 @@
 
     function iniciarSuscripcionAvisos(limit = 200) {
       try {
-        db.collection('announcements')
-          .orderBy('createdAt', 'desc')
-          .limit(limit)
-          .onSnapshot(snapshot => {
-            const avisos = construirAvisosDesdeSnapshot(snapshot);
-            actualizarYMostrarAvisos(avisos);
-          }, err => {
-            console.error('Error en la suscripción de avisos:', err);
-            const contenedor = document.getElementById('load-error');
-            if (contenedor) contenedor.style.display = 'block';
+        if (Array.isArray(unsubscribeAvisos) && unsubscribeAvisos.length) {
+          unsubscribeAvisos.forEach(fn => {
+            if (typeof fn === 'function') fn();
           });
+        }
+        unsubscribeAvisos = [];
+
+        let publicSnapshot = null;
+        let alumnosSnapshot = null;
+
+        const renderMerged = () => {
+          const snapshots = [publicSnapshot];
+          if (alumnosSnapshot) snapshots.push(alumnosSnapshot);
+          const avisos = combinarAvisosSnapshots(snapshots.filter(Boolean));
+          actualizarYMostrarAvisos(avisos);
+        };
+
+        const handleError = (err) => {
+          console.error('Error en la suscripción de avisos:', err);
+          const contenedor = document.getElementById('load-error');
+          if (contenedor) contenedor.style.display = 'block';
+        };
+
+        const unsubPublic = getPublicAnnouncementsQuery(limit).onSnapshot(snapshot => {
+          publicSnapshot = snapshot;
+          renderMerged();
+        }, handleError);
+        unsubscribeAvisos.push(unsubPublic);
+
+        if (allowInternalAnnouncements) {
+          const unsubAlumnos = getAlumnosAnnouncementsQuery(limit).onSnapshot(snapshot => {
+            alumnosSnapshot = snapshot;
+            renderMerged();
+          }, handleError);
+          unsubscribeAvisos.push(unsubAlumnos);
+        }
       } catch (err) {
         console.error('No se pudo iniciar la suscripción de avisos:', err);
       }
@@ -1323,32 +1603,19 @@
       // ---- Cargar avisos desde Firestore ----
       async function cargarAvisosIndex() {
         try {
-          const snapshot = await db
-            .collection('announcements')
-            .orderBy('createdAt', 'desc')
-            .limit(5)
-            .get();
+          document.querySelectorAll('.docentes-bubble').forEach(el => el.remove());
+          const avisos = await loadMergedAnnouncementsOnce(5);
+          if (!avisos.length) return;
 
-          if (snapshot.empty) return;
-
-          const hoy = new Date();
           let index = 0;
 
-          snapshot.forEach(doc => {
-            const data = doc.data();
-
-            // Filtrar expirados
-            const expiry = data.expiryDate && typeof data.expiryDate.toDate === 'function'
-              ? data.expiryDate.toDate()
-              : null;
-            if (expiry && expiry < hoy) return;
-
-            const titulo    = data.title    || 'Aviso importante';
-            const contenido = data.content  || '';
+          avisos.forEach(data => {
+            const titulo    = data.title || 'Aviso importante';
+            const contenido = data.content || '';
             const categoria = data.category || '';
             const etiqueta  = 'AVISO GENERAL';
-            const linkUrl   = data.linkUrl  || '';
-            const fechaObj  = data.createdAt && data.createdAt.toDate ? data.createdAt.toDate() : null;
+            const linkUrl   = data.linkUrl || '';
+            const fechaObj  = data._createdAtDate || null;
             const fechaText = fechaObj
               ? fechaObj.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
               : '';
@@ -1362,8 +1629,7 @@
         }
       }
 
-      // Lanzar carga de avisos al abrir index
-      cargarAvisosIndex();
+      window.cargarAvisosIndexPublico = cargarAvisosIndex;
     })();
 
     // Inicialización
@@ -1523,8 +1789,6 @@
           });
         }
       }
-
-      iniciarSuscripcionAvisos(200);
 
       const searchInput = document.getElementById('search-input');
       if (searchInput) {

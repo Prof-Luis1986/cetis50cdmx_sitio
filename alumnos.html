@@ -329,8 +329,11 @@
 <main class="container card" role="main">
   <h1 class="page-title">Avisos — Alumnos</h1>
 
-  <section class="controls" aria-label="Controles de filtrado">
+  <section id="filters-controls" class="controls" aria-label="Controles de filtrado">
     <input id="search-input" type="search" placeholder="Buscar por título, contenido..." />
+    <select id="group-filter">
+      <option value="">Todos los grupos</option>
+    </select>
     <select id="specialty-filter">
       <option value="">Todas las especialidades</option>
     </select>
@@ -369,6 +372,10 @@
     </div>
   </section>
 
+  <section id="announcements-lock" style="display:none; background:#fff3cd; border-left:4px solid #856404; color:#5d1620; padding:12px 14px; border-radius:10px; margin-top:8px;">
+    Inicia sesión con tu cuenta institucional para ver los anuncios.
+  </section>
+
   <section id="announcements-section" aria-live="polite">
     <div id="announcements-list" class="announcements-list"></div>
     <div id="no-announcements" style="display:none;color:#7a1e29;font-weight:600;">No hay avisos para Alumnos.</div>
@@ -390,6 +397,17 @@
     const logoutBtn = document.getElementById('alumnosLogoutBtn');
     const loginMsg = document.getElementById('alumnosLoginMsg');
     const boletaCta = document.getElementById('boletaCta');
+    const lockSection = document.getElementById('announcements-lock');
+    const announcementsSection = document.getElementById('announcements-section');
+    const announcementsList = document.getElementById('announcements-list');
+    const noAnnouncementsEl = document.getElementById('no-announcements');
+    const loadErrorEl = document.getElementById('load-error');
+    const searchInput = document.getElementById('search-input');
+    const groupFilter = document.getElementById('group-filter');
+    const specialtyFilter = document.getElementById('specialty-filter');
+    const filtersControls = document.getElementById('filters-controls');
+    let allAnnouncements = [];
+    let announcementsLoaded = false;
     const ALLOWED_DOMAINS = ['@cetis50cdmx.com', '@cetis50cdmx.edu.mx'];
     const REDIRECT_FALLBACK_CODES = new Set([
       'auth/popup-blocked',
@@ -419,16 +437,34 @@
         boletaCta?.classList.remove('hidden');
         const email = user.email || '';
         const nombre = user.displayName || (email ? email.split('@')[0] : 'usuario');
-        loginMsg.textContent = 'Sesión iniciada como ' + email + '. Bienvenido(a), ' + nombre + '.';
+        loginMsg.textContent = 'Sesión iniciada como ' + email + '. Bienvenido(a), ' + nombre + '. Ya puedes ver avisos internos.';
         loginMsg.style.color = '#155724';
         loginBtn.textContent = 'Cambiar de cuenta';
         logoutBtn.style.display = '';
       } else {
         boletaCta?.classList.add('hidden');
-        loginMsg.textContent = 'Inicia sesión con tu correo institucional (@cetis50cdmx.com o @cetis50cdmx.edu.mx) para acceder a la boleta.';
+        loginMsg.textContent = 'Inicia sesión con tu correo institucional (@cetis50cdmx.com o @cetis50cdmx.edu.mx) para acceder a boleta y avisos internos.';
         loginMsg.style.color = '#9b1d1d';
         loginBtn.textContent = 'Iniciar sesión con Google';
         logoutBtn.style.display = 'none';
+      }
+    }
+
+    function setAnnouncementsLocked(locked, customMessage = '') {
+      lockSection.style.display = locked ? 'block' : 'none';
+      announcementsSection.style.display = locked ? 'none' : 'block';
+      filtersControls.style.display = locked ? 'none' : 'flex';
+
+      if (customMessage) lockSection.textContent = customMessage;
+
+      searchInput.disabled = locked;
+      groupFilter.disabled = locked;
+      specialtyFilter.disabled = locked;
+
+      if (locked) {
+        announcementsList.innerHTML = '';
+        noAnnouncementsEl.style.display = 'none';
+        loadErrorEl.style.display = 'none';
       }
     }
 
@@ -436,8 +472,17 @@
       if (user && !hasAllowedDomain(user)) {
         auth.signOut();
         updateBoletaAccess(null);
+        setAnnouncementsLocked(true, 'Tu cuenta no pertenece al dominio institucional permitido.');
       } else {
         updateBoletaAccess(user);
+        if (user && hasAllowedDomain(user)) {
+          setAnnouncementsLocked(false);
+          loadAnnouncementsIfAuthorized();
+        } else {
+          setAnnouncementsLocked(true, 'Inicia sesión con tu cuenta institucional para ver los anuncios.');
+          allAnnouncements = [];
+          announcementsLoaded = false;
+        }
       }
     });
 
@@ -491,6 +536,155 @@
     function truncate(text, n = 180) {
       if (!text) return '';
       return text.length > n ? text.slice(0, n) + '...' : text;
+    }
+
+    function normalizeToken(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+    }
+
+    function getGroupsFromAnnouncement(a) {
+      const arr = [...(a.groups || []), ...(a.grupos || [])];
+      return arr.map(g => String(g).trim()).filter(Boolean);
+    }
+
+    function getGroupLinksMap(a) {
+      const maps = [
+        a.groupPdfLinks,
+        a.groupLinks,
+        a.linksByGroup,
+        a.pdfByGroup,
+        a.groupUrls
+      ];
+      return maps.find(m => m && typeof m === 'object' && !Array.isArray(m)) || null;
+    }
+
+    function findMapValueByNormalizedKey(mapObj, key) {
+      if (!mapObj || !key) return '';
+      const target = normalizeToken(key);
+      const entries = Object.entries(mapObj);
+      for (const [k, v] of entries) {
+        if (normalizeToken(k) === target && typeof v === 'string' && v.trim()) {
+          return v.trim();
+        }
+      }
+      return '';
+    }
+
+    function getSpecialtyGroupLinksMap(a, specialtyValue) {
+      const containers = [
+        a.linksBySpecialtyAndGroup,
+        a.pdfBySpecialtyAndGroup,
+        a.specialtyGroupPdfLinks
+      ];
+      const selected = normalizeToken(specialtyValue);
+      for (const container of containers) {
+        if (!container || typeof container !== 'object' || Array.isArray(container)) continue;
+        const specialtyKey = Object.keys(container).find(k => normalizeToken(k) === selected);
+        if (!specialtyKey) continue;
+        const groupMap = container[specialtyKey];
+        if (groupMap && typeof groupMap === 'object' && !Array.isArray(groupMap)) return groupMap;
+      }
+      return null;
+    }
+
+    function resolveAnnouncementLink(avisoData) {
+      const selectedGroup = (groupFilter?.value || '').trim();
+      const selectedSpecialty = (specialtyFilter?.value || '').trim();
+      const fallback = (avisoData.linkUrl && String(avisoData.linkUrl).trim()) ? String(avisoData.linkUrl).trim() : '';
+
+      if (!selectedGroup) return fallback;
+
+      const bySpecialtyGroup = getSpecialtyGroupLinksMap(avisoData, selectedSpecialty);
+      const specialtyGroupMatch = findMapValueByNormalizedKey(bySpecialtyGroup, selectedGroup);
+      if (specialtyGroupMatch) return specialtyGroupMatch;
+
+      const byGroup = getGroupLinksMap(avisoData);
+      const groupMatch = findMapValueByNormalizedKey(byGroup, selectedGroup);
+      if (groupMatch) return groupMatch;
+
+      return fallback;
+    }
+
+    function extractDriveFileId(rawUrl) {
+      try {
+        const url = new URL(rawUrl);
+        const filePathMatch = url.pathname.match(/\/file\/d\/([^/]+)/i);
+        if (filePathMatch && filePathMatch[1]) return filePathMatch[1];
+        const openId = url.searchParams.get('id');
+        if (openId) return openId;
+      } catch (_) {}
+      return '';
+    }
+
+    function getPdfPreviewUrl(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return '';
+      const link = rawUrl.trim();
+      if (!/^https?:\/\//i.test(link)) return '';
+
+      if (/\.pdf(?:[?#].*)?$/i.test(link)) return link;
+
+      if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
+        if (/\/preview(?:[?#].*)?$/i.test(link)) return link;
+        const fileId = extractDriveFileId(link);
+        if (fileId) return `https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview`;
+      }
+      return '';
+    }
+
+    function getPdfDownloadUrl(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return '';
+      const link = rawUrl.trim();
+      if (!/^https?:\/\//i.test(link)) return '';
+      if (/\.pdf(?:[?#].*)?$/i.test(link)) return link;
+      if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
+        const fileId = extractDriveFileId(link);
+        if (fileId) return `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}`;
+      }
+      return '';
+    }
+
+    function attachPdfControls(rootEl) {
+      const frame = rootEl.querySelector('[data-pdf-frame]');
+      const zoomOut = rootEl.querySelector('[data-pdf-zoom-out]');
+      const zoomIn = rootEl.querySelector('[data-pdf-zoom-in]');
+      const reset = rootEl.querySelector('[data-pdf-reset]');
+      const fullscreen = rootEl.querySelector('[data-pdf-fullscreen]');
+      const zoomLabel = rootEl.querySelector('[data-pdf-zoom-label]');
+      const pdfBox = rootEl.querySelector('[data-pdf-box]');
+
+      if (!frame || !zoomOut || !zoomIn || !reset || !fullscreen || !zoomLabel || !pdfBox) return;
+
+      let zoom = 1;
+      const updateZoom = () => {
+        frame.style.transform = `scale(${zoom})`;
+        frame.style.transformOrigin = 'top center';
+        zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+      };
+
+      zoomOut.addEventListener('click', () => {
+        zoom = Math.max(0.7, Number((zoom - 0.1).toFixed(2)));
+        updateZoom();
+      });
+      zoomIn.addEventListener('click', () => {
+        zoom = Math.min(2.2, Number((zoom + 0.1).toFixed(2)));
+        updateZoom();
+      });
+      reset.addEventListener('click', () => {
+        zoom = 1;
+        updateZoom();
+      });
+      fullscreen.addEventListener('click', () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen?.();
+        } else {
+          pdfBox.requestFullscreen?.();
+        }
+      });
+      updateZoom();
     }
 
     async function fetchAnnouncements(category) {
@@ -559,12 +753,41 @@
           `).join('')
         : '<span style="color:#666;">Todas las especialidades</span>';
 
-      const enlaceHTML = avisoData.linkUrl
+      const resolvedLinkUrl = resolveAnnouncementLink(avisoData);
+      const enlaceHTML = resolvedLinkUrl
         ? `<div style="margin-top:15px;">
-            <a href="${escapeAttr(avisoData.linkUrl)}" target="_blank" rel="noopener"
+            <a href="${escapeAttr(resolvedLinkUrl)}" target="_blank" rel="noopener"
                style="color:#7a1e29;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
-              🔗 Ver más información
+              🔗 Abrir en nueva pestaña
             </a>
+          </div>`
+        : '';
+
+      const pdfPreviewUrl = getPdfPreviewUrl(resolvedLinkUrl);
+      const pdfDownloadUrl = getPdfDownloadUrl(resolvedLinkUrl);
+      const pdfPreviewHTML = pdfPreviewUrl
+        ? `<div style="margin-top:14px;">
+            <div style="font-size:0.9rem;font-weight:700;color:#1b2847;margin-bottom:8px;">
+              👁️ Previsualización de PDF
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">
+              <button type="button" data-pdf-zoom-out style="border:0;border-radius:999px;padding:6px 12px;background:#1b2847;color:#fff;font-weight:700;cursor:pointer;">-</button>
+              <button type="button" data-pdf-zoom-in style="border:0;border-radius:999px;padding:6px 12px;background:#1b2847;color:#fff;font-weight:700;cursor:pointer;">+</button>
+              <button type="button" data-pdf-reset style="border:0;border-radius:999px;padding:6px 12px;background:#1b2847;color:#fff;font-weight:700;cursor:pointer;">100%</button>
+              <button type="button" data-pdf-fullscreen style="border:0;border-radius:999px;padding:6px 12px;background:#1b2847;color:#fff;font-weight:700;cursor:pointer;">Pantalla completa</button>
+              <span data-pdf-zoom-label style="font-size:0.85rem;font-weight:700;color:#1b2847;">100%</span>
+              <a href="${escapeAttr(resolvedLinkUrl || pdfPreviewUrl)}" target="_blank" rel="noopener" style="text-decoration:none;border-radius:999px;padding:6px 12px;background:#7a1e29;color:#fff;font-weight:700;">Abrir en nueva pestaña</a>
+              ${pdfDownloadUrl ? `<a href="${escapeAttr(pdfDownloadUrl)}" target="_blank" rel="noopener" download style="text-decoration:none;border-radius:999px;padding:6px 12px;background:#1f6f3e;color:#fff;font-weight:700;">Descargar PDF</a>` : ''}
+            </div>
+            <div data-pdf-box style="height:62vh;min-height:320px;border:1px solid #d8dce6;border-radius:10px;overflow:auto;background:#f5f7fb;">
+              <iframe
+                src="${escapeAttr(pdfPreviewUrl)}"
+                title="Previsualización de PDF"
+                style="width:100%;height:100%;border:0;transition:transform 0.15s ease;"
+                data-pdf-frame
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
           </div>`
         : '';
 
@@ -584,6 +807,7 @@
           ${eventoTexto}
           <div style="color:#333;line-height:1.7;font-size:1rem;white-space:pre-wrap;margin-bottom:18px;">${escapeHtml(avisoData.content || '')}</div>
           ${enlaceHTML}
+          ${pdfPreviewHTML}
           <hr style="border:none;border-top:1px solid #eee;margin:22px 0;">
           <div style="background:#fafafa;border-radius:12px;padding:16px 14px;border-left:4px solid #7a1e29;">
             <div style="margin-bottom:10px;"><strong style="color:#7a1e29;">🎯 Especialidades:</strong><br><div style="margin-top:6px;">${especialidades}</div></div>
@@ -597,6 +821,7 @@
 
       modal.appendChild(modalContent);
       document.body.appendChild(modal);
+      if (pdfPreviewUrl) attachPdfControls(modalContent);
 
       const btnCerrar = document.getElementById('cerrar-modal-aviso');
       const btnOk = document.getElementById('modal-ok-publico');
@@ -668,11 +893,26 @@
       const q = (document.getElementById('search-input').value || '').toLowerCase().trim();
       const spec = (document.getElementById('specialty-filter').value || '').trim();
       const filtered = all.filter(a => {
-        const txt = (a.title + ' ' + (a.content || '')).toLowerCase();
+        const specs = (a.specialties || []).map(s => String(s).toLowerCase());
+        const groups = getGroupsFromAnnouncement(a).map(g => g.toLowerCase());
+        const groupMap = getGroupLinksMap(a);
+        const mapGroupKeys = groupMap ? Object.keys(groupMap).map(k => String(k).toLowerCase()) : [];
+        const allGroupTerms = [...groups, ...mapGroupKeys];
+        const txt = [
+          a.title || '',
+          a.content || '',
+          specs.join(' '),
+          allGroupTerms.join(' ')
+        ].join(' ').toLowerCase();
         if (q && !txt.includes(q)) return false;
+        const selectedGroup = (groupFilter.value || '').trim().toLowerCase();
+        if (selectedGroup) {
+          const hasGroupData = allGroupTerms.length > 0;
+          if (hasGroupData && !allGroupTerms.some(g => normalizeToken(g) === normalizeToken(selectedGroup))) return false;
+        }
         if (spec) {
-          const specs = (a.specialties || []).map(s => s.toLowerCase());
-          if (!specs.includes(spec.toLowerCase())) return false;
+          // Si el aviso no trae specialties, se interpreta como "todas las especialidades".
+          if (specs.length && !specs.includes(spec.toLowerCase())) return false;
         }
         return true;
       });
@@ -692,19 +932,41 @@
       });
     }
 
-    let allAnnouncements = [];
-    window.addEventListener('DOMContentLoaded', async () => {
+    function fillGroupOptions(all) {
+      const set = new Set();
+      all.forEach(a => {
+        getGroupsFromAnnouncement(a).forEach(g => set.add(g));
+        const groupMap = getGroupLinksMap(a);
+        if (groupMap) Object.keys(groupMap).forEach(k => set.add(k));
+      });
+      const sel = document.getElementById('group-filter');
+      sel.querySelectorAll('option:not(:first-child)').forEach(o => o.remove());
+      Array.from(set).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })).forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g;
+        opt.textContent = g;
+        sel.appendChild(opt);
+      });
+    }
+
+    async function loadAnnouncementsIfAuthorized() {
+      if (announcementsLoaded) return;
       try {
         allAnnouncements = await fetchAnnouncements(CATEGORY);
+        fillGroupOptions(allAnnouncements);
         fillSpecialtyOptions(allAnnouncements);
         renderAnnouncements(allAnnouncements);
+        announcementsLoaded = true;
       } catch (err) {
         console.error('Error cargando avisos:', err);
-        document.getElementById('load-error').style.display = 'block';
+        loadErrorEl.style.display = 'block';
       }
-      document.getElementById('search-input').addEventListener('input', () => applyFilters(allAnnouncements));
-      document.getElementById('specialty-filter').addEventListener('change', () => applyFilters(allAnnouncements));
-    });
+    }
+
+    searchInput.addEventListener('input', () => applyFilters(allAnnouncements));
+    groupFilter.addEventListener('change', () => applyFilters(allAnnouncements));
+    specialtyFilter.addEventListener('change', () => applyFilters(allAnnouncements));
+    setAnnouncementsLocked(true, 'Inicia sesión con tu cuenta institucional para ver los anuncios.');
   })();
 </script>
 </body>
