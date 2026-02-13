@@ -750,6 +750,11 @@
       return String(category || '').trim().toLowerCase();
     }
 
+    function filterAnnouncementsBySession(avisos) {
+      if (allowInternalAnnouncements) return avisos;
+      return avisos.filter(aviso => PUBLIC_CATEGORIES.includes(normalizeCategory(aviso.category)));
+    }
+
     function combinarAvisosSnapshots(snapshots) {
       const byId = new Map();
       snapshots.forEach(snapshot => {
@@ -818,6 +823,7 @@
         allowInternalAnnouncements = !!(user && hasAllowedDomain(user));
         updateIndexAuthUi(user);
       }
+      actualizarYMostrarAvisos(lastList);
       await refreshAnnouncementsBySession();
     });
 
@@ -1397,16 +1403,17 @@
 
     function actualizarYMostrarAvisos(avisos) {
       lastList = avisos;
+      const visibleAvisos = filterAnnouncementsBySession(avisos);
       const searchInput = document.getElementById('search-input');
       const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
       if (query) {
-        const filtered = avisos.filter(a =>
+        const filtered = visibleAvisos.filter(a =>
           (a.title && a.title.toLowerCase().includes(query)) ||
           (a.content && a.content.toLowerCase().includes(query))
         );
         mostrarAvisos(filtered);
       } else {
-        mostrarAvisos(avisos);
+        mostrarAvisos(visibleAvisos);
       }
     }
 
@@ -1418,6 +1425,7 @@
           });
         }
         unsubscribeAvisos = [];
+        actualizarYMostrarAvisos([]);
 
         let publicSnapshot = null;
         let alumnosSnapshot = null;
