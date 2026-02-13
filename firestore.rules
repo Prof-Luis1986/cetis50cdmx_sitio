@@ -61,7 +61,7 @@ service cloud.firestore {
     }
 
     function isAvisoPublico() {
-      return avisoCategory() in ['general', 'eventos', 'vinculacion'];
+      return avisoCategory() in ['general', 'eventos', 'vinculacion', 'tutorias'];
     }
 
     function isAvisoAlumnos() {
