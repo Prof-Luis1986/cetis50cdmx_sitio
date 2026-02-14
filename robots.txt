@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cetis50cdmx.edu.mx/sitemap.xml
