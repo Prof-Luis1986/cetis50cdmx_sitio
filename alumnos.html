@@ -269,6 +269,16 @@
       transform: translateY(-2px);
       box-shadow: 0 10px 22px rgba(0,0,0,0.35);
     }
+    .linea-cta a.disabled {
+      background: #e6e6e6;
+      color: #5c5c5c;
+      cursor: not-allowed;
+      opacity: 0.9;
+    }
+    .linea-cta a.disabled:hover {
+      transform: none;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    }
 
     .boleta-login {
       display: flex;
@@ -361,7 +371,7 @@
       <h2>Genera tu línea de captura</h2>
       <p>Llena tus datos y descarga tu ficha de pago con la información bancaria del plantel.</p>
     </div>
-    <a href="linea-captura.html">Generar ficha</a>
+    <a id="lineaDisabledBtn" class="disabled" href="linea-captura.html" aria-disabled="true">Generar ficha</a>
   </section>
 
   <section class="video-feature" aria-label="Video Explorando Carrera">
@@ -528,9 +538,14 @@
       }
     });
     const boletaDisabledBtn = document.getElementById('boletaDisabledBtn');
+    const lineaDisabledBtn = document.getElementById('lineaDisabledBtn');
     boletaDisabledBtn?.addEventListener('click', (e) => {
       e.preventDefault();
       alert('La consulta de boleta estará disponible después del tercer parcial.');
+    });
+    lineaDisabledBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      alert('La generación de ficha está temporalmente deshabilitada.');
     });
     logoutBtn.addEventListener('click', async () => {
       try {
