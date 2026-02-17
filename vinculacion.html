@@ -119,6 +119,7 @@
       if (!rawUrl || typeof rawUrl !== 'string') return '';
       const link = rawUrl.trim();
       if (!/^https?:\/\//i.test(link)) return '';
+      if (!isExplicitPdfLink(link)) return '';
       if (/\.pdf(?:[?#].*)?$/i.test(link)) return link;
       if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
         if (/\/preview(?:[?#].*)?$/i.test(link)) return link;
@@ -131,12 +132,27 @@
       if (!rawUrl || typeof rawUrl !== 'string') return '';
       const link = rawUrl.trim();
       if (!/^https?:\/\//i.test(link)) return '';
+      if (!isExplicitPdfLink(link)) return '';
       if (/\.pdf(?:[?#].*)?$/i.test(link)) return link;
       if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
         const fileId = extractDriveFileId(link);
         if (fileId) return `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}`;
       }
       return '';
+    }
+    function getFilePreviewUrl(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return '';
+      const link = rawUrl.trim();
+      if (!/^https?:\/\//i.test(link)) return '';
+      if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
+        const fileId = extractDriveFileId(link);
+        if (fileId) return `https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview`;
+      }
+      return '';
+    }
+    function isExplicitPdfLink(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return false;
+      return /\.pdf(?:[?#].*)?$/i.test(rawUrl.trim());
     }
     function getImagePreviewUrl(rawUrl) {
       if (!rawUrl || typeof rawUrl !== 'string') return '';
@@ -212,8 +228,10 @@
       const especialidades = (avisoData.specialties && avisoData.specialties.length) ? avisoData.specialties.map(s => `<span style="background:#7a1e29;color:#fff;padding:4px 10px;border-radius:999px;font-size:0.8rem;margin:3px;display:inline-block;">${escapeHtml(s)}</span>`).join('') : '<span style="color:#666;">Todas las especialidades</span>';
       const linkUrl = (avisoData.linkUrl && String(avisoData.linkUrl).trim()) ? String(avisoData.linkUrl).trim() : '';
       const enlaceHTML = linkUrl ? `<div style="margin-top:15px;"><a href="${escapeAttr(linkUrl)}" target="_blank" rel="noopener" style="color:#7a1e29;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px;">🔗 Abrir en nueva pestaña</a></div>` : '';
-      const pdfPreviewUrl = getPdfPreviewUrl(linkUrl);
-      const pdfDownloadUrl = getPdfDownloadUrl(linkUrl);
+      const isExplicitPdf = isExplicitPdfLink(linkUrl);
+      const pdfPreviewUrl = isExplicitPdf ? getPdfPreviewUrl(linkUrl) : '';
+      const pdfDownloadUrl = isExplicitPdf ? getPdfDownloadUrl(linkUrl) : '';
+      const filePreviewUrl = !isExplicitPdf ? getFilePreviewUrl(linkUrl) : '';
       const imagePreviewUrl = getImagePreviewUrl(linkUrl);
       const imagePreviewHTML = imagePreviewUrl ? `<div style="margin-top:14px;">
             <div style="font-size:0.9rem;font-weight:700;color:#1b2847;margin-bottom:8px;">🖼️ Vista previa de imagen</div>
@@ -236,6 +254,12 @@
               <iframe src="${escapeAttr(pdfPreviewUrl)}" title="Previsualización de PDF" style="width:100%;height:100%;border:0;transition:transform 0.15s ease;" data-pdf-frame loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
           </div>` : '';
+      const filePreviewHTML = (!imagePreviewUrl && filePreviewUrl) ? `<div style="margin-top:14px;">
+            <div style="font-size:0.9rem;font-weight:700;color:#1b2847;margin-bottom:8px;">👁️ Vista previa del archivo</div>
+            <div data-file-box style="height:62vh;min-height:320px;border:1px solid #d8dce6;border-radius:10px;overflow:auto;background:#f5f7fb;">
+              <iframe src="${escapeAttr(filePreviewUrl)}" title="Vista previa del archivo" style="width:100%;height:100%;border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+          </div>` : '';
 
       modalContent.innerHTML = `
         <style>@keyframes fadeIn { from {opacity:0;} to {opacity:1;} } @keyframes slideUp { from {transform:translateY(40px);opacity:0;} to {transform:translateY(0);opacity:1;} } @keyframes fadeOut { from {opacity:1;} to {opacity:0;} }</style>
@@ -251,6 +275,7 @@
           ${imagePreviewHTML}
           ${enlaceHTML}
           ${pdfPreviewHTML}
+          ${filePreviewHTML}
           <hr style="border:none;border-top:1px solid #eee;margin:22px 0;">
           <div style="background:#fafafa;border-radius:12px;padding:16px 14px;border-left:4px solid #7a1e29;">
             <div style="margin-bottom:10px;"><strong style="color:#7a1e29;">🎯 Especialidades:</strong><br><div style="margin-top:6px;">${especialidades}</div></div>
@@ -264,7 +289,7 @@
 
       modal.appendChild(modalContent);
       document.body.appendChild(modal);
-      if (pdfPreviewUrl) attachPdfControls(modalContent);
+      if (pdfPreviewUrl && isExplicitPdf) attachPdfControls(modalContent);
 
       const btnCerrar = document.getElementById('cerrar-modal-aviso');
       const btnOk = document.getElementById('modal-ok-publico');
@@ -342,5 +367,6 @@
     });
   })();
 </script>
+  <script src="image-protection.js"></script>
 </body>
 </html>

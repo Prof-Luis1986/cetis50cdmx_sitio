@@ -887,6 +887,7 @@
 
     function getPdfPreviewUrl(link) {
       if (!link) return null;
+      if (!isExplicitPdfLink(link)) return null;
       if (/\.pdf(?:[?#].*)?$/i.test(link)) return link;
 
       if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
@@ -899,12 +900,27 @@
 
     function getPdfDownloadUrl(link) {
       if (!link) return null;
+      if (!isExplicitPdfLink(link)) return null;
       if (/\.pdf(?:[?#].*)?$/i.test(link)) return link;
       if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
         const fileId = extractGoogleDriveFileId(link);
         if (fileId) return `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}`;
       }
       return null;
+    }
+
+    function getFilePreviewUrl(link) {
+      if (!link) return null;
+      if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
+        const fileId = extractGoogleDriveFileId(link);
+        if (fileId) return `https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview`;
+      }
+      return null;
+    }
+
+    function isExplicitPdfLink(link) {
+      if (!link) return false;
+      return /\.pdf(?:[?#].*)?$/i.test(String(link).trim());
     }
 
     function getImagePreviewUrl(link) {
@@ -1061,8 +1077,10 @@
           `).join('')
         : '<span style="color:#666;">Todas las especialidades</span>';
 
-      const pdfPreviewUrl = getPdfPreviewUrl(avisoData.linkUrl);
-      const pdfDownloadUrl = getPdfDownloadUrl(avisoData.linkUrl);
+      const isExplicitPdf = isExplicitPdfLink(avisoData.linkUrl);
+      const pdfPreviewUrl = isExplicitPdf ? getPdfPreviewUrl(avisoData.linkUrl) : null;
+      const pdfDownloadUrl = isExplicitPdf ? getPdfDownloadUrl(avisoData.linkUrl) : null;
+      const filePreviewUrl = !isExplicitPdf ? getFilePreviewUrl(avisoData.linkUrl) : null;
       const imagePreviewUrl = getImagePreviewUrl(avisoData.linkUrl);
       const enlaceHTML = avisoData.linkUrl
         ? `
@@ -1105,6 +1123,22 @@
                 title="Vista previa de PDF"
                 loading="lazy"
                 data-pdf-frame
+                style="width:100%;height:100%;border:0;background:#fff;"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+          </section>
+        `
+        : '';
+
+      const filePreviewHTML = (!imagePreviewUrl && filePreviewUrl)
+        ? `
+          <section style="margin:18px 0 0 0;">
+            <div style="font-size:0.9rem;font-weight:700;color:#1b2847;margin-bottom:8px;">👁️ Vista previa del archivo</div>
+            <div style="height:62vh;min-height:320px;border:1px solid #d8dce6;border-radius:10px;overflow:auto;background:#f5f7fb;">
+              <iframe
+                src="${escapeAttr(filePreviewUrl)}"
+                title="Vista previa del archivo"
+                loading="lazy"
                 style="width:100%;height:100%;border:0;background:#fff;"
                 referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
@@ -1174,6 +1208,8 @@
 
           ${pdfPreviewHTML}
 
+          ${filePreviewHTML}
+
           ${enlaceHTML}
 
           <hr style="border:none;border-top:1px solid #eee;margin:22px 0;">
@@ -1213,7 +1249,7 @@
 
       modal.appendChild(modalContent);
       document.body.appendChild(modal);
-      if (pdfPreviewUrl) attachPdfControls(modalContent);
+      if (pdfPreviewUrl && isExplicitPdf) attachPdfControls(modalContent);
       playAvisoAudio();
 
       const btnCerrar = document.getElementById('cerrar-modal-aviso');
@@ -1847,5 +1883,6 @@
       }
     });
   </script>
+  <script src="image-protection.js"></script>
 </body>
 </html>
