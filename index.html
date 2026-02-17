@@ -907,6 +907,22 @@
       return null;
     }
 
+    function getImagePreviewUrl(link) {
+      if (!link) return null;
+      const raw = String(link).trim();
+      if (!/^https?:\/\//i.test(raw)) return null;
+      if (/\.(?:png|jpe?g|gif|webp|bmp|svg|avif)(?:[?#].*)?$/i.test(raw)) return raw;
+      try {
+        const url = new URL(raw);
+        const isDriveDirect = /drive\.google\.com$/i.test(url.hostname) &&
+          /\/uc$/i.test(url.pathname) &&
+          !!url.searchParams.get('id');
+        const isGoogleusercontent = /googleusercontent\.com$/i.test(url.hostname);
+        if (isDriveDirect || isGoogleusercontent) return raw;
+      } catch (_) {}
+      return null;
+    }
+
     function attachPdfControls(rootEl) {
       const frame = rootEl.querySelector('[data-pdf-frame]');
       const zoomOut = rootEl.querySelector('[data-pdf-zoom-out]');
@@ -1047,6 +1063,7 @@
 
       const pdfPreviewUrl = getPdfPreviewUrl(avisoData.linkUrl);
       const pdfDownloadUrl = getPdfDownloadUrl(avisoData.linkUrl);
+      const imagePreviewUrl = getImagePreviewUrl(avisoData.linkUrl);
       const enlaceHTML = avisoData.linkUrl
         ? `
           <div style="margin-top:15px;">
@@ -1055,6 +1072,17 @@
               🔗 Abrir en nueva pestaña
             </a>
           </div>
+        `
+        : '';
+
+      const imagePreviewHTML = imagePreviewUrl
+        ? `
+          <section style="margin:18px 0 0 0;">
+            <div style="font-size:0.9rem;font-weight:700;color:#1b2847;margin-bottom:8px;">🖼️ Vista previa de imagen</div>
+            <div style="border:1px solid #d8dce6;border-radius:10px;overflow:hidden;background:#f5f7fb;">
+              <img src="${escapeAttr(imagePreviewUrl)}" alt="Vista previa del aviso" loading="lazy" style="display:block;width:100%;height:auto;max-height:62vh;object-fit:contain;background:#fff;" />
+            </div>
+          </section>
         `
         : '';
 
@@ -1141,6 +1169,8 @@
           <div style="color:#333;line-height:1.7;font-size:1rem;white-space:pre-wrap;margin-bottom:18px;">
             ${escapeHtml(avisoData.content || '')}
           </div>
+
+          ${imagePreviewHTML}
 
           ${pdfPreviewHTML}
 

@@ -980,6 +980,22 @@
       return '';
     }
 
+    function getImagePreviewUrl(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return '';
+      const link = rawUrl.trim();
+      if (!/^https?:\/\//i.test(link)) return '';
+      if (/\.(?:png|jpe?g|gif|webp|bmp|svg|avif)(?:[?#].*)?$/i.test(link)) return link;
+      try {
+        const url = new URL(link);
+        const isDriveDirect = /drive\.google\.com$/i.test(url.hostname) &&
+          /\/uc$/i.test(url.pathname) &&
+          !!url.searchParams.get('id');
+        const isGoogleusercontent = /googleusercontent\.com$/i.test(url.hostname);
+        if (isDriveDirect || isGoogleusercontent) return link;
+      } catch (_) {}
+      return '';
+    }
+
     function attachPdfControls(rootEl) {
       const frame = rootEl.querySelector('[data-pdf-frame]');
       const zoomOut = rootEl.querySelector('[data-pdf-zoom-out]');
@@ -1061,6 +1077,7 @@
       const youtubeEmbedUrl = getYouTubeEmbedUrl(data.linkUrl);
       const pdfPreviewUrl = getPdfPreviewUrl(data.linkUrl);
       const pdfDownloadUrl = getPdfDownloadUrl(data.linkUrl);
+      const imagePreviewUrl = getImagePreviewUrl(data.linkUrl);
       if (youtubeEmbedUrl) {
         modalVideo.innerHTML = `
           <div class="video-responsive">
@@ -1068,6 +1085,15 @@
                     frameborder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowfullscreen></iframe>
+          </div>
+        `;
+      } else if (imagePreviewUrl) {
+        modalVideo.innerHTML = `
+          <div style="margin-top:8px;">
+            <div class="pdf-label" style="margin-bottom:8px;">Vista previa de imagen</div>
+            <div class="pdf-responsive" style="padding-top:0;height:auto;aspect-ratio:auto;min-height:260px;">
+              <img src="${imagePreviewUrl}" alt="Vista previa del aviso" loading="lazy" style="display:block;width:100%;height:auto;max-height:62vh;object-fit:contain;background:#fff;" />
+            </div>
           </div>
         `;
       } else if (pdfPreviewUrl) {

@@ -138,6 +138,21 @@
       }
       return '';
     }
+    function getImagePreviewUrl(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return '';
+      const link = rawUrl.trim();
+      if (!/^https?:\/\//i.test(link)) return '';
+      if (/\.(?:png|jpe?g|gif|webp|bmp|svg|avif)(?:[?#].*)?$/i.test(link)) return link;
+      try {
+        const url = new URL(link);
+        const isDriveDirect = /drive\.google\.com$/i.test(url.hostname) &&
+          /\/uc$/i.test(url.pathname) &&
+          !!url.searchParams.get('id');
+        const isGoogleusercontent = /googleusercontent\.com$/i.test(url.hostname);
+        if (isDriveDirect || isGoogleusercontent) return link;
+      } catch (_) {}
+      return '';
+    }
     function attachPdfControls(rootEl) {
       const frame = rootEl.querySelector('[data-pdf-frame]');
       const zoomOut = rootEl.querySelector('[data-pdf-zoom-out]');
@@ -199,6 +214,13 @@
       const enlaceHTML = linkUrl ? `<div style="margin-top:15px;"><a href="${escapeAttr(linkUrl)}" target="_blank" rel="noopener" style="color:#7a1e29;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px;">🔗 Abrir en nueva pestaña</a></div>` : '';
       const pdfPreviewUrl = getPdfPreviewUrl(linkUrl);
       const pdfDownloadUrl = getPdfDownloadUrl(linkUrl);
+      const imagePreviewUrl = getImagePreviewUrl(linkUrl);
+      const imagePreviewHTML = imagePreviewUrl ? `<div style="margin-top:14px;">
+            <div style="font-size:0.9rem;font-weight:700;color:#1b2847;margin-bottom:8px;">🖼️ Vista previa de imagen</div>
+            <div style="border:1px solid #d8dce6;border-radius:10px;overflow:hidden;background:#f5f7fb;">
+              <img src="${escapeAttr(imagePreviewUrl)}" alt="Vista previa del aviso" loading="lazy" style="display:block;width:100%;height:auto;max-height:62vh;object-fit:contain;background:#fff;" />
+            </div>
+          </div>` : '';
       const pdfPreviewHTML = pdfPreviewUrl ? `<div style="margin-top:14px;">
             <div style="font-size:0.9rem;font-weight:700;color:#1b2847;margin-bottom:8px;">👁️ Previsualización de PDF</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">
@@ -226,6 +248,7 @@
         <div style="padding:22px 24px 24px 24px;">
           ${eventoTexto}
           <div style="color:#333;line-height:1.7;font-size:1rem;white-space:pre-wrap;margin-bottom:18px;">${escapeHtml(avisoData.content || '')}</div>
+          ${imagePreviewHTML}
           ${enlaceHTML}
           ${pdfPreviewHTML}
           <hr style="border:none;border-top:1px solid #eee;margin:22px 0;">
