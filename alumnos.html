@@ -408,6 +408,13 @@
     <div id="no-announcements" style="display:none;color:#7a1e29;font-weight:600;">No hay avisos para Alumnos.</div>
     <div id="load-error" style="display:none;color:#7a1e29;font-weight:600;">Error al cargar avisos.</div>
   </section>
+    <footer class="institutional-footer" role="contentinfo" aria-label="Información institucional">
+      <p>© 2026 CETis 50 - Ciudad de México</p>
+      <p>Dirección General de Educación Tecnológica Industrial y de Servicios (DGETI)</p>
+      <p>Secretaría de Educación Pública</p>
+      <p>Clave de Centro de Trabajo: 09DCT0050G</p>
+      <p>Dominio institucional: cetis50cdmx.edu.mx</p>
+    </footer>
 </main>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -470,7 +477,7 @@
         logoutBtn.style.display = '';
       } else {
         boletaCta?.classList.add('hidden');
-        loginMsg.textContent = 'Inicia sesión con tu correo institucional (@cetis50cdmx.com o @cetis50cdmx.edu.mx) para acceder a boleta y avisos internos.';
+        loginMsg.textContent = 'Inicia sesión con tu cuenta institucional para acceder a boleta y avisos internos.';
         loginMsg.style.color = '#9b1d1d';
         loginBtn.textContent = 'Iniciar sesión con Google';
         logoutBtn.style.display = 'none';
@@ -499,7 +506,7 @@
       if (user && !hasAllowedDomain(user)) {
         auth.signOut();
         updateBoletaAccess(null);
-        setAnnouncementsLocked(true, 'Tu cuenta no pertenece al dominio institucional permitido.');
+        setAnnouncementsLocked(true, 'Debes iniciar sesión con tu cuenta institucional para continuar.');
       } else {
         updateBoletaAccess(user);
         if (user && hasAllowedDomain(user)) {

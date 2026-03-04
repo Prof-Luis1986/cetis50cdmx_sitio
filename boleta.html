@@ -251,6 +251,13 @@
       <div id="boletaHtml"></div>
     </section>
   </section>
+    <footer class="institutional-footer" role="contentinfo" aria-label="Información institucional">
+      <p>© 2026 CETis 50 - Ciudad de México</p>
+      <p>Dirección General de Educación Tecnológica Industrial y de Servicios (DGETI)</p>
+      <p>Secretaría de Educación Pública</p>
+      <p>Clave de Centro de Trabajo: 09DCT0050G</p>
+      <p>Dominio institucional: cetis50cdmx.edu.mx</p>
+    </footer>
 </main>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -348,9 +355,9 @@
         boletaHtml.innerHTML = '';
         if (user && !hasAllowedDomain(user)) {
           await auth.signOut();
-          searchMsg.textContent = 'Debes usar tu correo institucional (@cetis50cdmx.com o @cetis50cdmx.edu.mx) para consultar la boleta.';
+          searchMsg.textContent = 'Debes iniciar sesión con tu cuenta institucional para consultar la boleta.';
         } else {
-          searchMsg.textContent = 'Inicia sesión con tu correo institucional (@cetis50cdmx.com o @cetis50cdmx.edu.mx) para continuar.';
+          searchMsg.textContent = 'Inicia sesión con tu cuenta institucional para continuar.';
         }
         searchMsg.style.color = '#9b1d1d';
       }
@@ -364,7 +371,7 @@
 
     function ensureAuthorizedUser(){
       if (!isAuthorized) {
-        searchMsg.textContent = 'Debes iniciar sesión con tu correo institucional (@cetis50cdmx.com o @cetis50cdmx.edu.mx) antes de buscar.';
+        searchMsg.textContent = 'Debes iniciar sesión con tu cuenta institucional antes de buscar.';
         searchMsg.style.color = '#9b1d1d';
         return false;
       }
