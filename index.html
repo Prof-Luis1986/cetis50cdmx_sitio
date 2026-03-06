@@ -1667,40 +1667,65 @@
         if (e.target === announcementModalIndex) closeModalIndex();
       });
 
-      // ---- Drag & drop para burbujas ----
-      function makeDraggable(el) {
-        let offsetX = 0, offsetY = 0, isDown = false;
+      function getBubbleStack() {
+        let stack = document.getElementById('floating-announcements');
+        if (!stack) {
+          stack = document.createElement('section');
+          stack.id = 'floating-announcements';
+          stack.className = 'floating-bubbles';
+          stack.setAttribute('aria-label', 'Notificaciones destacadas');
+          document.body.appendChild(stack);
+        }
+        return stack;
+      }
 
-        el.addEventListener('mousedown', (e) => {
-          isDown = true;
-          el.classList.add('dragging');
-          offsetX = e.clientX - el.getBoundingClientRect().left;
-          offsetY = e.clientY - el.getBoundingClientRect().top;
-          e.preventDefault();
-        });
-
-        window.addEventListener('mousemove', (e) => {
-          if (!isDown) return;
-          const x = e.clientX - offsetX;
-          const y = e.clientY - offsetY;
-          el.style.left = x + 'px';
-          el.style.top = y + 'px';
-          el.style.bottom = 'auto';
-          el.style.right = 'auto';
-        });
-
-        window.addEventListener('mouseup', () => {
-          if (isDown) {
-            isDown = false;
-            el.classList.remove('dragging');
-          }
+      function setExtrasVisibility(stack, showExtras) {
+        stack.querySelectorAll('.docentes-bubble.bubble-extra').forEach(el => {
+          el.classList.toggle('is-hidden', !showExtras);
         });
       }
 
+      function ensureToggleButton(stack) {
+        let toggle = stack.querySelector('.bubble-toggle');
+        if (!toggle) {
+          toggle = document.createElement('button');
+          toggle.type = 'button';
+          toggle.className = 'bubble-toggle';
+          toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const hasHidden = !!stack.querySelector('.docentes-bubble.bubble-extra.is-hidden');
+            setExtrasVisibility(stack, hasHidden);
+            refreshBubbleToggle(stack);
+          });
+          stack.appendChild(toggle);
+        }
+        return toggle;
+      }
+
+      function refreshBubbleToggle(stack) {
+        const extras = Array.from(stack.querySelectorAll('.docentes-bubble.bubble-extra'));
+        const toggle = stack.querySelector('.bubble-toggle');
+        if (!extras.length) {
+          if (toggle) toggle.remove();
+          return;
+        }
+
+        const hiddenCount = extras.filter(el => el.classList.contains('is-hidden')).length;
+        const nextText = hiddenCount > 0
+          ? `Ver ${hiddenCount} más`
+          : 'Ocultar extras';
+        const activeToggle = toggle || ensureToggleButton(stack);
+        activeToggle.textContent = nextText;
+        activeToggle.setAttribute('aria-expanded', hiddenCount === 0 ? 'true' : 'false');
+      }
+
       // ---- Crear burbuja flotante para un aviso general ----
-      function crearBurbujaIndex(info, index) {
+      function crearBurbujaIndex(info, opts = {}) {
+        const { featured = false, extra = false, stack = null } = opts;
         const bubble = document.createElement('div');
         bubble.className = 'docentes-bubble'; // reutilizamos el mismo estilo
+        if (featured) bubble.classList.add('bubble-featured');
+        if (extra) bubble.classList.add('bubble-extra', 'is-hidden');
 
         bubble.innerHTML = `
           <button class="bubble-close" aria-label="Cerrar notificación">&times;</button>
@@ -1708,11 +1733,6 @@
           <div class="bubble-title">${info.titulo}</div>
           <div class="bubble-meta">${info.fecha}${info.categoria ? ' · ' + info.categoria : ''}</div>
         `;
-
-        // posición inicial (esquina inferior derecha, en columna)
-        const offset = index * 80;
-        bubble.style.bottom = (20 + offset) + 'px';
-        bubble.style.right = '20px';
 
         // click: abrir modal (excepto botón X)
         bubble.addEventListener('click', (e) => {
@@ -1723,25 +1743,32 @@
         // cerrar
         bubble.querySelector('.bubble-close').addEventListener('click', (e) => {
           e.stopPropagation();
+          const wasFeatured = bubble.classList.contains('bubble-featured');
           bubble.remove();
+          if (stack) {
+            if (wasFeatured) {
+              const next = stack.querySelector('.docentes-bubble.bubble-extra');
+              if (next) {
+                next.classList.remove('bubble-extra', 'is-hidden');
+                next.classList.add('bubble-featured');
+              }
+            }
+            refreshBubbleToggle(stack);
+          }
         });
 
-        // arrastrable
-        makeDraggable(bubble);
-
-        document.body.appendChild(bubble);
+        return bubble;
       }
 
       // ---- Cargar avisos desde Firestore ----
       async function cargarAvisosIndex() {
         try {
-          document.querySelectorAll('.docentes-bubble').forEach(el => el.remove());
+          const stack = getBubbleStack();
+          stack.innerHTML = '';
           const avisos = await loadMergedAnnouncementsOnce(5);
           if (!avisos.length) return;
 
-          let index = 0;
-
-          avisos.forEach(data => {
+          avisos.forEach((data, idx) => {
             const titulo    = data.title || 'Aviso importante';
             const contenido = data.content || '';
             const categoria = data.category || '';
@@ -1753,9 +1780,14 @@
               : '';
 
             const info = { titulo, contenido, categoria, etiqueta, linkUrl, fecha: fechaText };
-            crearBurbujaIndex(info, index);
-            index++;
+            const bubble = crearBurbujaIndex(info, {
+              featured: idx === 0,
+              extra: idx > 0,
+              stack
+            });
+            stack.appendChild(bubble);
           });
+          refreshBubbleToggle(stack);
         } catch (e) {
           console.error('Error al cargar avisos generales para index:', e);
         }

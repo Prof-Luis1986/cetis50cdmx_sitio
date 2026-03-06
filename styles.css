@@ -596,6 +596,64 @@ a { color: inherit; }
   user-select: none;
   transition: box-shadow 0.2s ease, transform 0.1s ease;
 }
+
+.floating-bubbles {
+  position: fixed;
+  right: 16px;
+  bottom: 14px;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  max-height: min(70vh, 620px);
+  overflow-y: auto;
+  padding-right: 2px;
+  pointer-events: none;
+}
+
+.floating-bubbles .docentes-bubble {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  min-width: 0;
+  width: min(330px, calc(100vw - 28px));
+  max-width: 330px;
+  padding: 10px 34px 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+  pointer-events: auto;
+  animation: bubble-enter 180ms ease-out;
+}
+
+.floating-bubbles .docentes-bubble.bubble-featured {
+  border-color: rgba(255, 220, 180, 0.45);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.42);
+}
+
+.floating-bubbles .docentes-bubble.bubble-extra.is-hidden {
+  display: none;
+}
+
+.bubble-toggle {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #fff;
+  background: rgba(24, 12, 20, 0.75);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+  pointer-events: auto;
+  backdrop-filter: blur(2px);
+}
+
+.bubble-toggle:hover {
+  background: rgba(24, 12, 20, 0.92);
+}
 .docentes-bubble.dragging {
   cursor: grabbing;
   box-shadow: 0 14px 30px rgba(0,0,0,0.45);
@@ -636,11 +694,29 @@ a { color: inherit; }
   font-size: 0.96rem;
   margin-bottom: 3px;
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .bubble-meta {
   font-size: 0.78rem;
   opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes bubble-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* =========================
@@ -710,6 +786,19 @@ a { color: inherit; }
   .specialty-info { padding-top: 10px; }
 
   /* Burbujas más pequeñas en móvil */
+  .floating-bubbles {
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    align-items: stretch;
+    max-height: min(58vh, 460px);
+  }
+
+  .floating-bubbles .docentes-bubble {
+    width: 100%;
+    max-width: none;
+  }
+
   .docentes-bubble {
     min-width: 220px;
     max-width: 280px;
@@ -737,6 +826,21 @@ a { color: inherit; }
   }
 
   /* Burbujas aún más compactas en pantallas muy pequeñas */
+  .floating-bubbles {
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+  }
+
+  .floating-bubbles .docentes-bubble {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    padding-right: 32px;
+    bottom: auto !important;
+    right: auto !important;
+  }
+
   .docentes-bubble {
     min-width: 200px;
     max-width: 240px;
