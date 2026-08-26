@@ -188,33 +188,6 @@
       box-shadow: 0 6px 16px rgba(0,0,0,0.25);
     }
 
-    .linea-cta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 24px;
-      margin-bottom: 18px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #0b3d4f, #1b2847);
-      color: #fff;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
-    }
-
-    .linea-cta h2 {
-      margin: 0 0 6px 0;
-      font-size: 1.35rem;
-      font-weight: 800;
-    }
-
-    .linea-cta p {
-      margin: 0;
-      max-width: 480px;
-      line-height: 1.4;
-      color: rgba(255,255,255,0.9);
-    }
-
     .video-feature {
       margin: 12px 0 20px;
       padding: 20px 22px;
@@ -255,32 +228,6 @@
       box-shadow: 0 8px 18px rgba(0,0,0,0.22);
     }
 
-    .linea-cta a {
-      background: #bfe9ff;
-      color: #0b3d4f;
-      padding: 12px 22px;
-      border-radius: 999px;
-      font-weight: 700;
-      text-decoration: none;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-    }
-
-    .linea-cta a:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 22px rgba(0,0,0,0.35);
-    }
-    .linea-cta a.disabled {
-      background: #e6e6e6;
-      color: #5c5c5c;
-      cursor: not-allowed;
-      opacity: 0.9;
-    }
-    .linea-cta a.disabled:hover {
-      transform: none;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-    }
-
     .boleta-login {
       display: flex;
       flex-wrap: wrap;
@@ -307,10 +254,6 @@
 
     @media (max-width: 640px) {
       .boleta-cta {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .linea-cta {
         flex-direction: column;
         align-items: flex-start;
       }
@@ -365,14 +308,6 @@
       <p>Ingresa tu número de control para descargar tu boleta de calificaciones en segundos.</p>
     </div>
     <a id="boletaDisabledBtn" class="disabled" href="boleta.html" aria-disabled="true">Consultar boleta</a>
-  </section>
-
-  <section class="linea-cta" aria-label="Línea de captura">
-    <div>
-      <h2>Genera tu línea de captura</h2>
-      <p>Llena tus datos y descarga tu ficha de pago con la información bancaria del plantel.</p>
-    </div>
-    <a id="lineaDisabledBtn" class="disabled" href="linea-captura.html" aria-disabled="true">Generar ficha</a>
   </section>
 
   <section class="video-feature" aria-label="Video Explorando Carrera">
@@ -546,14 +481,9 @@
       }
     });
     const boletaDisabledBtn = document.getElementById('boletaDisabledBtn');
-    const lineaDisabledBtn = document.getElementById('lineaDisabledBtn');
     boletaDisabledBtn?.addEventListener('click', (e) => {
       e.preventDefault();
       alert('La consulta de boleta estará disponible después del tercer parcial.');
-    });
-    lineaDisabledBtn?.addEventListener('click', (e) => {
-      e.preventDefault();
-      alert('La generación de ficha está temporalmente deshabilitada.');
     });
     logoutBtn.addEventListener('click', async () => {
       try {
