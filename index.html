@@ -948,6 +948,17 @@
       return null;
     }
 
+    function getWebPreviewUrl(link) {
+      if (!link) return null;
+      const raw = String(link).trim();
+      try {
+        const url = new URL(raw);
+        return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
     function attachPdfControls(rootEl) {
       const frame = rootEl.querySelector('[data-pdf-frame]');
       const zoomOut = rootEl.querySelector('[data-pdf-zoom-out]');
@@ -1091,6 +1102,9 @@
       const pdfDownloadUrl = isExplicitPdf ? getPdfDownloadUrl(avisoData.linkUrl) : null;
       const filePreviewUrl = !isExplicitPdf ? getFilePreviewUrl(avisoData.linkUrl) : null;
       const imagePreviewUrl = getImagePreviewUrl(avisoData.linkUrl);
+      const webPreviewUrl = (!pdfPreviewUrl && !filePreviewUrl && !imagePreviewUrl)
+        ? getWebPreviewUrl(avisoData.linkUrl)
+        : null;
       const enlaceHTML = avisoData.linkUrl
         ? `
           <div style="margin-top:15px;">
@@ -1151,6 +1165,26 @@
                 style="width:100%;height:100%;border:0;background:#fff;"
                 referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
+          </section>
+        `
+        : '';
+
+      const webPreviewHTML = webPreviewUrl
+        ? `
+          <section style="margin:18px 0 0 0;">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <strong style="color:#1b2847;">🌐 Vista previa del sitio web</strong>
+              <a href="${escapeAttr(webPreviewUrl)}" target="_blank" rel="noopener" style="text-decoration:none;border-radius:999px;padding:6px 12px;background:#7a1e29;color:#fff;font-weight:700;">Abrir en nueva pestaña</a>
+            </div>
+            <div style="height:62vh;min-height:320px;border:1px solid #d8dce6;border-radius:10px;overflow:hidden;background:#f5f7fb;">
+              <iframe
+                src="${escapeAttr(webPreviewUrl)}"
+                title="Vista previa del sitio web"
+                loading="lazy"
+                style="width:100%;height:100%;border:0;background:#fff;"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+            <p style="margin:8px 0 0;color:#666;font-size:0.82rem;">Si el sitio no aparece, el servidor externo no permite mostrarlo dentro de otra página.</p>
           </section>
         `
         : '';
@@ -1218,6 +1252,8 @@
           ${pdfPreviewHTML}
 
           ${filePreviewHTML}
+
+          ${webPreviewHTML}
 
           ${enlaceHTML}
 
@@ -1612,6 +1648,9 @@
         const pdfPreviewUrl = isExplicitPdf ? getPdfPreviewUrl(data.linkUrl) : null;
         const filePreviewUrl = !isExplicitPdf ? getFilePreviewUrl(data.linkUrl) : null;
         const imagePreviewUrl = getImagePreviewUrl(data.linkUrl);
+        const webPreviewUrl = (!pdfPreviewUrl && !filePreviewUrl && !imagePreviewUrl && !modalVideoIndex.innerHTML)
+          ? getWebPreviewUrl(data.linkUrl)
+          : null;
 
         const imagePreviewHTML = imagePreviewUrl ? `
           <section style="margin-top:14px;">
@@ -1647,7 +1686,20 @@
           </section>
         ` : '';
 
-        modalMediaIndex.innerHTML = `${imagePreviewHTML}${pdfPreviewHTML}${filePreviewHTML}`;
+        const webPreviewHTML = webPreviewUrl ? `
+          <section style="margin-top:14px;">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <strong style="color:#1b2847;">🌐 Vista previa del sitio web</strong>
+              <a href="${escapeAttr(webPreviewUrl)}" target="_blank" rel="noopener" class="chip chip-link">Abrir en nueva pestaña</a>
+            </div>
+            <div style="height:50vh;min-height:260px;border:1px solid #d8dce6;border-radius:10px;overflow:hidden;background:#f5f7fb;">
+              <iframe src="${escapeAttr(webPreviewUrl)}" title="Vista previa del sitio web" loading="lazy" style="width:100%;height:100%;border:0;background:#fff;" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+            <p style="margin:8px 0 0;color:#666;font-size:0.82rem;">Si el sitio no aparece, el servidor externo no permite mostrarlo dentro de otra página.</p>
+          </section>
+        ` : '';
+
+        modalMediaIndex.innerHTML = `${imagePreviewHTML}${pdfPreviewHTML}${filePreviewHTML}${webPreviewHTML}`;
         if (pdfPreviewUrl) {
           attachPdfControls(modalMediaIndex);
         }

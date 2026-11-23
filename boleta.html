@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
   <title>CETIS 50 - Boleta</title>
   <link rel="canonical" href="https://cetis50cdmx.edu.mx/boleta.html" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -99,14 +100,54 @@
       color: #9b1d1d;
     }
 
+    .search-progress {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 14px auto 0;
+      color: #4a4a4a;
+      font-size: 0.92rem;
+      text-align: left;
+    }
+    .search-progress[hidden] {
+      display: none;
+    }
+    .search-spinner {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 auto;
+      border: 3px solid rgba(122, 30, 41, 0.2);
+      border-top-color: var(--vino-700);
+      border-radius: 50%;
+      animation: search-spin 0.8s linear infinite;
+    }
+    .search-progress strong {
+      display: block;
+      color: var(--vino-700);
+    }
+    .search-progress span {
+      display: block;
+      margin-top: 1px;
+      font-size: 0.83rem;
+    }
+    @keyframes search-spin {
+      to { transform: rotate(360deg); }
+    }
+
     .boleta-document {
       max-width: 900px;
       margin: 0 auto;
+      position: relative;
       background: #fff;
       border: 1px solid rgba(0,0,0,0.08);
       border-radius: 16px;
       padding: 18px 20px 22px;
       box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    }
+
+    .consultation-watermark {
+      display: none;
     }
 
     .boleta-meta {
@@ -191,6 +232,35 @@
         border: none;
         box-shadow: none;
       }
+      .consultation-watermark {
+        display: flex !important;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 135%;
+        padding: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: rgba(122, 30, 41, 0.38);
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        line-height: 1.55;
+        text-align: center;
+        text-transform: uppercase;
+        transform: translate(-50%, -50%) rotate(-34deg);
+        text-shadow: 0 0 3px rgba(255, 255, 255, 0.9);
+        z-index: 2;
+        pointer-events: none;
+      }
+      .consultation-watermark span {
+        white-space: nowrap;
+      }
+      .boleta-document > :not(.consultation-watermark) {
+        position: relative;
+        z-index: 1;
+      }
     }
 
     @media (max-width: 700px) {
@@ -243,6 +313,13 @@
       <button id="logoutBtn" class="btn secondary" type="button" style="display:none;">Cerrar sesión</button>
     </div>
     <div id="searchMsg" role="status" aria-live="polite" class="no-print"></div>
+    <div id="searchProgress" class="search-progress no-print" role="status" aria-live="assertive" aria-label="Consulta en proceso" hidden>
+      <span class="search-spinner" aria-hidden="true"></span>
+      <div>
+        <strong>Consultando tu boleta…</strong>
+        <span>Esto puede tardar unos segundos. Por favor, espera.</span>
+      </div>
+    </div>
 
     <section id="boletaContainer" style="display:none; margin-top:18px;">
       <div class="no-print" style="text-align:right; margin-bottom:10px;">
@@ -267,14 +344,17 @@
 
 <script>
   (function(){
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+    const APPS_SCRIPT_BOLETAS_URL = 'https://script.google.com/macros/s/AKfycbzquE3TRqOvaSY1R_4fhKcESiuZSIZTI-abKhxzmmP_K53QQpZLuZumZkrd3-mVDkFQkQ/exec';
+    const USE_APPS_SCRIPT = /^https:\/\/script\.google\.com\/macros\/s\//.test(APPS_SCRIPT_BOLETAS_URL);
+    const db = USE_APPS_SCRIPT ? null : firebase.firestore();
+    const auth = USE_APPS_SCRIPT ? null : firebase.auth();
 
     const searchBtn = document.getElementById('searchBtn');
     const numInput = document.getElementById('numeroControlInput');
     const searchMsg = document.getElementById('searchMsg');
     const boletaContainer = document.getElementById('boletaContainer');
     const boletaHtml = document.getElementById('boletaHtml');
+    const searchProgress = document.getElementById('searchProgress');
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     const LOGO_URL = 'https://raw.githubusercontent.com/Prof-Luis1986/recursos-cetis50/refs/heads/main/logo-cetis50.jpg';
@@ -286,22 +366,54 @@
       'auth/operation-not-supported-in-this-environment'
     ]);
     const AUTHORITIES = {
-      director: 'EDGAR OAXACA HERNÁNDEZ'
+      director: 'JOSE MIGUEL MIRANDA VELAZQUEZ'
     };
     let isAuthorized = false;
-    searchBtn.disabled = true;
+    let authKey = '';
+    let loginInProgress = false;
+    let searchInProgress = false;
+    let signingOutUnauthorized = false;
+    isAuthorized = USE_APPS_SCRIPT;
+    searchBtn.disabled = !USE_APPS_SCRIPT;
 
-    (async () => {
-      try {
-        await auth.getRedirectResult();
-      } catch (err) {
-        console.error('Error en resultado redirect boleta:', err);
-        searchMsg.textContent = 'Error al regresar de Google: ' + (err.code || err.message || err);
-        searchMsg.style.color = '#9b1d1d';
-      }
-    })();
+    if (USE_APPS_SCRIPT) {
+      loginBtn.style.display = 'none';
+      logoutBtn.style.display = 'none';
+    }
+
+    function setSearchState(){
+      searchBtn.disabled = !isAuthorized || searchInProgress;
+      searchBtn.textContent = searchInProgress ? 'Consultando…' : 'Buscar';
+      numInput.disabled = searchInProgress;
+      searchProgress.hidden = !searchInProgress;
+      loginBtn.disabled = loginInProgress;
+      logoutBtn.disabled = loginInProgress || searchInProgress;
+    }
+
+    if (USE_APPS_SCRIPT) {
+      setSearchState();
+    }
+
+    if (!USE_APPS_SCRIPT) {
+      (async () => {
+        try {
+          await auth.getRedirectResult();
+        } catch (err) {
+          console.error('Error en resultado redirect boleta:', err);
+          searchMsg.textContent = 'Error al regresar de Google: ' + (err.code || err.message || err);
+          searchMsg.style.color = '#9b1d1d';
+        }
+      })();
+    }
 
     loginBtn.addEventListener('click', async () => {
+      if (USE_APPS_SCRIPT) return;
+      if (loginInProgress) return;
+      loginInProgress = true;
+      setSearchState();
+      searchMsg.textContent = 'Abriendo inicio de sesión...';
+      searchMsg.style.color = '#555';
+
       try {
         await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -324,9 +436,13 @@
         console.error('Error en login boleta:', err);
         searchMsg.textContent = 'Error al iniciar sesión: ' + (err.code || err.message || err);
         searchMsg.style.color = '#9b1d1d';
+      } finally {
+        loginInProgress = false;
+        setSearchState();
       }
     });
     logoutBtn.addEventListener('click', async () => {
+      if (USE_APPS_SCRIPT) return;
       try {
         await auth.signOut();
         searchMsg.textContent = 'Sesión cerrada.';
@@ -338,30 +454,51 @@
       }
     });
 
-    auth.onAuthStateChanged(async (user) => {
-      if (user && hasAllowedDomain(user)) {
-        isAuthorized = true;
-        searchBtn.disabled = false;
-        loginBtn.style.display = 'none';
-        logoutBtn.style.display = '';
-        searchMsg.textContent = 'Sesión iniciada como ' + (user.email || user.displayName || 'usuario');
-        searchMsg.style.color = '#155724';
-      } else {
-        isAuthorized = false;
-        searchBtn.disabled = true;
-        loginBtn.style.display = '';
-        logoutBtn.style.display = 'none';
-        boletaContainer.style.display = 'none';
-        boletaHtml.innerHTML = '';
-        if (user && !hasAllowedDomain(user)) {
-          await auth.signOut();
-          searchMsg.textContent = 'Debes iniciar sesión con tu cuenta institucional para consultar la boleta.';
-        } else {
-          searchMsg.textContent = 'Inicia sesión con tu cuenta institucional para continuar.';
+    if (!USE_APPS_SCRIPT) {
+      auth.onAuthStateChanged(async (user) => {
+        const nextAuthKey = user ? (user.uid || user.email || 'usuario') : 'sin-sesion';
+        const isAllowed = user && hasAllowedDomain(user);
+
+        if (nextAuthKey === authKey && isAuthorized === !!isAllowed) {
+          setSearchState();
+          return;
         }
-        searchMsg.style.color = '#9b1d1d';
-      }
-    });
+
+        authKey = nextAuthKey;
+
+        if (isAllowed) {
+          isAuthorized = true;
+          loginBtn.style.display = 'none';
+          logoutBtn.style.display = '';
+          searchMsg.textContent = 'Sesión iniciada como ' + (user.email || user.displayName || 'usuario');
+          searchMsg.style.color = '#155724';
+          setSearchState();
+        } else {
+          isAuthorized = false;
+          loginBtn.style.display = '';
+          logoutBtn.style.display = 'none';
+          boletaContainer.style.display = 'none';
+          boletaHtml.innerHTML = '';
+          if (user && !isAllowed) {
+            searchMsg.textContent = 'Debes iniciar sesión con tu cuenta institucional para consultar la boleta.';
+            searchMsg.style.color = '#9b1d1d';
+            setSearchState();
+            if (!signingOutUnauthorized) {
+              signingOutUnauthorized = true;
+              try {
+                await auth.signOut();
+              } finally {
+                signingOutUnauthorized = false;
+              }
+            }
+          } else {
+            searchMsg.textContent = 'Inicia sesión con tu cuenta institucional para continuar.';
+            searchMsg.style.color = '#9b1d1d';
+            setSearchState();
+          }
+        }
+      });
+    }
 
     function hasAllowedDomain(user){
       if (!user || !user.email) return false;
@@ -379,8 +516,248 @@
     }
 
     function escapeHtml(str){
-      if(!str) return '';
+      if(!str && str !== 0) return '';
       return String(str).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+    }
+
+    function uniqueValues(values){
+      return Array.from(new Set(values.filter(value => value !== '' && value !== null && value !== undefined)));
+    }
+
+    function controlSearchValues(value){
+      const raw = String(value || '').trim();
+      const compact = raw.replace(/\s+/g, '');
+      const digitsOnly = compact.replace(/\D+/g, '');
+      const values = [raw, compact, raw.toUpperCase(), compact.toUpperCase(), digitsOnly];
+
+      if (digitsOnly && Number.isSafeInteger(Number(digitsOnly))) {
+        values.push(Number(digitsOnly));
+      }
+
+      return uniqueValues(values);
+    }
+
+    function normalizeControlValue(value){
+      return String(value || '').replace(/\D+/g, '');
+    }
+
+    function getControlFromRow(row){
+      if (!row) return '';
+
+      const directValue = row.numeroControl || row.numero_control || row.num_control ||
+        row.no_control || row.control || row.numero_de_control || row['NO CONTROL'] ||
+        row['NO. CONTROL'] || row['No Control'];
+
+      if (directValue) return directValue;
+
+      const controlKey = Object.keys(row).find(key => {
+        const normalizedKey = key.normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_');
+
+        return [
+          'numero_control',
+          'num_control',
+          'no_control',
+          'control',
+          'numero_de_control'
+        ].includes(normalizedKey);
+      });
+
+      return controlKey ? row[controlKey] : '';
+    }
+
+    async function getBoletaById(candidates){
+      for (const candidate of candidates) {
+        if (typeof candidate !== 'string') continue;
+        const snapshot = await db.collection('boletas').doc(candidate).get();
+        if (snapshot.exists) return [snapshot];
+      }
+      return [];
+    }
+
+    async function getBoletaByField(candidates){
+      const fields = [
+        { query: 'numeroControl', dataKey: 'numeroControl' },
+        { query: 'numero_control', dataKey: 'numero_control' },
+        { query: new firebase.firestore.FieldPath('NO CONTROL'), dataKey: 'NO CONTROL' }
+      ];
+
+      for (const field of fields) {
+        for (const candidate of candidates) {
+          const snapshot = await db.collection('boletas')
+            .where(field.query, '==', candidate)
+            .get();
+
+          if (!snapshot.empty) return snapshot.docs;
+        }
+      }
+
+      for (const field of fields) {
+        for (const candidate of candidates) {
+          if (typeof candidate !== 'string' || !candidate) continue;
+
+          const snapshot = await db.collection('boletas')
+            .orderBy(field.query)
+            .startAt(candidate)
+            .endAt(candidate + '\uf8ff')
+            .get();
+
+          if (snapshot.empty) continue;
+
+          const matches = snapshot.docs.filter(doc => {
+            const value = doc.data()[field.dataKey];
+            return String(value || '').replace(/\s+/g, '').startsWith(candidate.replace(/\s+/g, ''));
+          });
+
+          if (matches.length) return matches;
+        }
+      }
+
+      return [];
+    }
+
+    async function scanBoletasByNormalizedControl(numero){
+      const target = normalizeControlValue(numero);
+      if (!target) return [];
+
+      const pageSize = 500;
+      const maxPages = 50;
+      let lastDoc = null;
+      let matches = [];
+
+      for (let page = 0; page < maxPages; page++) {
+        let query = db.collection('boletas')
+          .orderBy(firebase.firestore.FieldPath.documentId())
+          .limit(pageSize);
+
+        if (lastDoc) query = query.startAfter(lastDoc);
+
+        const snapshot = await query.get();
+        if (snapshot.empty) break;
+
+        snapshot.docs.forEach(doc => {
+          const row = doc.data();
+          const control = getControlFromRow(row);
+
+          if (normalizeControlValue(control) === target) {
+            matches.push(doc);
+          }
+        });
+
+        if (snapshot.size < pageSize) break;
+        lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      }
+
+      return matches;
+    }
+
+    async function findBoleta(numero){
+      const candidates = controlSearchValues(numero);
+      const docsByField = await getBoletaByField(candidates);
+      if (docsByField.length) {
+        console.log('✅ Coincidencias por campo:', docsByField.length);
+        return docsByField;
+      }
+
+      const docsById = await getBoletaById(candidates);
+      if (docsById.length) {
+        console.log('✅ Coincidencia por ID:', docsById[0].id);
+        const data = docsById[0].data();
+        const controlFromDoc = getControlFromRow(data);
+
+        if (controlFromDoc) {
+          const relatedDocs = await getBoletaByField(controlSearchValues(controlFromDoc));
+          if (relatedDocs.length) {
+            console.log('✅ Coincidencias relacionadas por control:', relatedDocs.length);
+            return relatedDocs;
+          }
+        }
+
+        return docsById;
+      }
+
+      const scannedDocs = await scanBoletasByNormalizedControl(numero);
+      console.log('🔎 Coincidencias por respaldo normalizado:', scannedDocs.length);
+      return scannedDocs;
+    }
+
+    async function findBoletaFromAppsScript(numero){
+      const url = new URL(APPS_SCRIPT_BOLETAS_URL);
+      url.searchParams.set('numeroControl', numero);
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        cache: 'no-store'
+      });
+
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch (err) {
+        throw new Error('Apps Script no devolvió JSON válido.');
+      }
+
+      if (!response.ok || payload?.ok === false) {
+        throw new Error(payload?.error || 'No se pudo consultar la boleta.');
+      }
+
+      return payload.boleta || payload;
+    }
+
+    function buildMateria(row){
+      return {
+        clave: row.clave || row.clave_asignatura || row.CLV_CENTRO || '',
+        nombre: row.asignatura || row.nombre_asignatura || row['NOMBRE ASIGNATURA'] ||
+          row.materia || row.modulo || row.nombre || '',
+        p1: row.p1 ?? row.periodo_1 ?? row['PERIODO 1'] ?? '',
+        p2: row.p2 ?? row.periodo_2 ?? row['PERIODO 2'] ?? '',
+        p3: row.p3 ?? row.periodo_3 ?? row['PERIODO 3'] ?? '',
+        a1: row.a1 ?? row.asistencia_periodo_1 ?? row['ASISTENCIA PERIODO 1'] ?? '',
+        a2: row.a2 ?? row.asistencia_periodo_2 ?? row['ASISTENCIA PERIODO 2'] ?? '',
+        a3: row.a3 ?? row.asistencia_periodo_3 ?? row['ASISTENCIA PERIODO 3'] ?? ''
+      };
+    }
+
+    function normalizeBoletaData(docs, requestedNumero){
+      const rows = docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const first = rows[0] || {};
+      const hasMaterias = Array.isArray(first.materias);
+      const numeroControl = getControlFromRow(first);
+
+      return {
+        ...first,
+        numeroControl: numeroControl || requestedNumero || first.id || '',
+        nombre: first.nombre_completo ||
+          [first.nombre || first.NOMBRE, first.paterno || first.PATERNO, first.materno || first.MATERNO].filter(Boolean).join(' ') ||
+          first.nombre || first.NOMBRE || '',
+        carrera: first.carrera || first.CARRERA || '',
+        grupo: first.grupo || first.GRUPO || '',
+        turno: first.turno || first.TURNO || '',
+        generacion: first.generacion || first.GENERACION || first.ciclo_escolar || '',
+        semestre: first.semestre || first.SEMESTRE || '',
+        materias: hasMaterias ? first.materias : rows.map(buildMateria)
+      };
+    }
+
+    function normalizeAppsScriptBoletaData(row, requestedNumero){
+      const first = row || {};
+      const numeroControl = getControlFromRow(first);
+
+      return {
+        ...first,
+        numeroControl: numeroControl || requestedNumero || '',
+        nombre: first.nombre_completo ||
+          [first.nombre || first.NOMBRE, first.paterno || first.PATERNO, first.materno || first.MATERNO].filter(Boolean).join(' ') ||
+          first.nombre || first.NOMBRE || '',
+        carrera: first.carrera || first.CARRERA || '',
+        grupo: first.grupo || first.GRUPO || '',
+        turno: first.turno || first.TURNO || '',
+        generacion: first.generacion || first.GENERACION || first.ciclo_escolar || '',
+        semestre: first.semestre || first.SEMESTRE || '',
+        materias: Array.isArray(first.materias) ? first.materias : []
+      };
     }
 
     function renderBoletaTemplate(b) {
@@ -395,6 +772,7 @@
           <td>${m.p1 ?? ''}</td>
           <td>${m.p2 ?? ''}</td>
           <td>${m.p3 ?? ''}</td>
+          <td>${m.calificacion_final ?? ''}</td>
           <td>${m.a1 ?? ''}</td>
           <td>${m.a2 ?? ''}</td>
           <td>${m.a3 ?? ''}</td>
@@ -403,6 +781,10 @@
 
       boletaHtml.innerHTML = `
         <div class="boleta-document">
+          <div class="consultation-watermark" aria-hidden="true">
+            <span>ESTA BOLETA NO REPRESENTA UN DOCUMENTO OFICIAL</span>
+            <span>SU USO ES SIMPLEMENTE DE CONSULTA</span>
+          </div>
           <div class="doc-print-header">
             <img src="${LOGO_URL}" alt="Logo CETIS 50" />
             <div class="doc-header-text">
@@ -431,13 +813,14 @@
                   <th>1ER. P.</th>
                   <th>2DO. P.</th>
                   <th>3ER. P.</th>
+                  <th>FINAL</th>
                   <th>1ER. A.</th>
                   <th>2DO. A.</th>
                   <th>3ER. A.</th>
                 </tr>
               </thead>
               <tbody>
-                ${materiasRows || '<tr><td colspan="8">No hay materias registradas</td></tr>'}
+                ${materiasRows || '<tr><td colspan="9">No hay materias registradas</td></tr>'}
               </tbody>
             </table>
           </div>
@@ -455,6 +838,7 @@
 
     async function buscarBoleta() {
       if (!ensureAuthorizedUser()) return;
+      if (searchInProgress) return;
 
       const numero = (numInput.value || '').trim();
       searchMsg.textContent = '';
@@ -466,21 +850,32 @@
         return;
       }
 
+      searchInProgress = true;
+      setSearchState();
       searchMsg.textContent = 'Buscando...';
       searchMsg.style.color = '#555';
 
       try {
-        console.log('🔍 Buscando boleta para:', numero);
-        const doc = await db.collection('boletas').doc(numero).get();
-        
-        if (!doc.exists) {
-          console.warn('❌ No se encontró documento con ID:', numero);
-          searchMsg.textContent = 'No se encontró la boleta para ese número.';
-          searchMsg.style.color = '#9b1d1d';
-          return;
+        let data;
+
+        if (USE_APPS_SCRIPT) {
+          console.log('🔍 Buscando boleta en Apps Script para:', numero);
+          data = normalizeAppsScriptBoletaData(await findBoletaFromAppsScript(numero), numero);
+        } else {
+          console.log('🔍 Buscando boleta para:', numero);
+          console.log('🔢 Variantes de búsqueda:', controlSearchValues(numero));
+          const docs = await findBoleta(numero);
+
+          if (!docs.length) {
+            console.warn('❌ No se encontró boleta para:', numero);
+            searchMsg.textContent = 'No se encontró la boleta para ese número.';
+            searchMsg.style.color = '#9b1d1d';
+            return;
+          }
+
+          data = normalizeBoletaData(docs, numero);
         }
-        
-        const data = doc.data();
+
         console.log('✅ Documento encontrado:', data);
         
         renderBoletaTemplate(data);
@@ -490,6 +885,9 @@
         console.error('❌ Error buscando boleta:', err);
         searchMsg.textContent = 'Error al buscar la boleta: ' + (err.message || err);
         searchMsg.style.color = '#9b1d1d';
+      } finally {
+        searchInProgress = false;
+        setSearchState();
       }
     }
 

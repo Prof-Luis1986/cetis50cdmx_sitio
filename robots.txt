@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /boleta.html
 
 Sitemap: https://cetis50cdmx.edu.mx/sitemap.xml

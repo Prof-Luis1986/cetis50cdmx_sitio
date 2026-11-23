@@ -302,14 +302,6 @@
     <p id="alumnosLoginMsg" aria-live="polite"></p>
   </section>
 
-  <section id="boletaCta" class="boleta-cta hidden" aria-label="Consulta de boleta">
-    <div>
-      <h2>Consulta tu boleta digital</h2>
-      <p>Ingresa tu número de control para descargar tu boleta de calificaciones en segundos.</p>
-    </div>
-    <a id="boletaDisabledBtn" class="disabled" href="boleta.html" aria-disabled="true">Consultar boleta</a>
-  </section>
-
   <section class="video-feature" aria-label="Video Explorando Carrera">
     <h2>Nueva carrera: Producción Digital y Experiencias Inmersivas</h2>
     <p>Conoce nuestra nueva carrera, que estará con nosotros a partir del ciclo 2026-2027. ¡Te esperamos para vivir esta nueva etapa con mucha emoción!</p>
@@ -365,7 +357,6 @@
     const loginBtn = document.getElementById('alumnosLoginBtn');
     const logoutBtn = document.getElementById('alumnosLogoutBtn');
     const loginMsg = document.getElementById('alumnosLoginMsg');
-    const boletaCta = document.getElementById('boletaCta');
     const lockSection = document.getElementById('announcements-lock');
     const announcementsSection = document.getElementById('announcements-section');
     const announcementsList = document.getElementById('announcements-list');
@@ -403,7 +394,6 @@
 
     function updateBoletaAccess(user){
       if (user && hasAllowedDomain(user)) {
-        boletaCta?.classList.remove('hidden');
         const email = user.email || '';
         const nombre = user.displayName || (email ? email.split('@')[0] : 'usuario');
         loginMsg.textContent = 'Sesión iniciada como ' + email + '. Bienvenido(a), ' + nombre + '. Ya puedes ver avisos internos.';
@@ -411,8 +401,7 @@
         loginBtn.textContent = 'Cambiar de cuenta';
         logoutBtn.style.display = '';
       } else {
-        boletaCta?.classList.add('hidden');
-        loginMsg.textContent = 'Inicia sesión con tu cuenta institucional para acceder a boleta y avisos internos.';
+        loginMsg.textContent = 'Inicia sesión con tu cuenta institucional para ver los avisos internos.';
         loginMsg.style.color = '#9b1d1d';
         loginBtn.textContent = 'Iniciar sesión con Google';
         logoutBtn.style.display = 'none';
@@ -479,11 +468,6 @@
         loginMsg.textContent = 'Error al iniciar sesión: ' + (err.code || err.message || err);
         loginMsg.style.color = '#9b1d1d';
       }
-    });
-    const boletaDisabledBtn = document.getElementById('boletaDisabledBtn');
-    boletaDisabledBtn?.addEventListener('click', (e) => {
-      e.preventDefault();
-      alert('La consulta de boleta estará disponible después del tercer parcial.');
     });
     logoutBtn.addEventListener('click', async () => {
       try {
