@@ -344,10 +344,10 @@
 
 <script>
   (function(){
-    const APPS_SCRIPT_BOLETAS_URL = 'https://script.google.com/macros/s/AKfycbzquE3TRqOvaSY1R_4fhKcESiuZSIZTI-abKhxzmmP_K53QQpZLuZumZkrd3-mVDkFQkQ/exec';
-    const USE_APPS_SCRIPT = /^https:\/\/script\.google\.com\/macros\/s\//.test(APPS_SCRIPT_BOLETAS_URL);
-    const db = USE_APPS_SCRIPT ? null : firebase.firestore();
-    const auth = USE_APPS_SCRIPT ? null : firebase.auth();
+    // Las boletas se almacenan como documentos cuyo ID es el número de control.
+    // Esta lectura directa evita recorrer la hoja de cálculo en cada consulta.
+    const db = firebase.firestore();
+    const auth = firebase.auth();
 
     const searchBtn = document.getElementById('searchBtn');
     const numInput = document.getElementById('numeroControlInput');
@@ -373,13 +373,7 @@
     let loginInProgress = false;
     let searchInProgress = false;
     let signingOutUnauthorized = false;
-    isAuthorized = USE_APPS_SCRIPT;
-    searchBtn.disabled = !USE_APPS_SCRIPT;
-
-    if (USE_APPS_SCRIPT) {
-      loginBtn.style.display = 'none';
-      logoutBtn.style.display = 'none';
-    }
+    searchBtn.disabled = true;
 
     function setSearchState(){
       searchBtn.disabled = !isAuthorized || searchInProgress;
@@ -390,12 +384,7 @@
       logoutBtn.disabled = loginInProgress || searchInProgress;
     }
 
-    if (USE_APPS_SCRIPT) {
-      setSearchState();
-    }
-
-    if (!USE_APPS_SCRIPT) {
-      (async () => {
+    (async () => {
         try {
           await auth.getRedirectResult();
         } catch (err) {
@@ -403,11 +392,9 @@
           searchMsg.textContent = 'Error al regresar de Google: ' + (err.code || err.message || err);
           searchMsg.style.color = '#9b1d1d';
         }
-      })();
-    }
+    })();
 
     loginBtn.addEventListener('click', async () => {
-      if (USE_APPS_SCRIPT) return;
       if (loginInProgress) return;
       loginInProgress = true;
       setSearchState();
@@ -442,7 +429,6 @@
       }
     });
     logoutBtn.addEventListener('click', async () => {
-      if (USE_APPS_SCRIPT) return;
       try {
         await auth.signOut();
         searchMsg.textContent = 'Sesión cerrada.';
@@ -454,8 +440,7 @@
       }
     });
 
-    if (!USE_APPS_SCRIPT) {
-      auth.onAuthStateChanged(async (user) => {
+    auth.onAuthStateChanged(async (user) => {
         const nextAuthKey = user ? (user.uid || user.email || 'usuario') : 'sin-sesion';
         const isAllowed = user && hasAllowedDomain(user);
 
@@ -472,6 +457,7 @@
           logoutBtn.style.display = '';
           searchMsg.textContent = 'Sesión iniciada como ' + (user.email || user.displayName || 'usuario');
           searchMsg.style.color = '#155724';
+          registerAccess('sesion_iniciada');
           setSearchState();
         } else {
           isAuthorized = false;
@@ -497,8 +483,7 @@
             setSearchState();
           }
         }
-      });
-    }
+    });
 
     function hasAllowedDomain(user){
       if (!user || !user.email) return false;
@@ -513,6 +498,21 @@
         return false;
       }
       return true;
+    }
+
+    function registerAccess(evento, numeroControl = '', resultado = '') {
+      const user = auth.currentUser;
+      if (!user || !hasAllowedDomain(user)) return;
+
+      db.collection('boletaAccessLogs').add({
+        evento,
+        numeroControl: String(numeroControl || '').replace(/\D+/g, ''),
+        resultado,
+        uid: user.uid,
+        email: (user.email || '').toLowerCase(),
+        displayName: user.displayName || '',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(err => console.warn('No se pudo registrar el acceso:', err));
     }
 
     function escapeHtml(str){
@@ -654,56 +654,10 @@
     }
 
     async function findBoleta(numero){
-      const candidates = controlSearchValues(numero);
-      const docsByField = await getBoletaByField(candidates);
-      if (docsByField.length) {
-        console.log('✅ Coincidencias por campo:', docsByField.length);
-        return docsByField;
-      }
-
-      const docsById = await getBoletaById(candidates);
-      if (docsById.length) {
-        console.log('✅ Coincidencia por ID:', docsById[0].id);
-        const data = docsById[0].data();
-        const controlFromDoc = getControlFromRow(data);
-
-        if (controlFromDoc) {
-          const relatedDocs = await getBoletaByField(controlSearchValues(controlFromDoc));
-          if (relatedDocs.length) {
-            console.log('✅ Coincidencias relacionadas por control:', relatedDocs.length);
-            return relatedDocs;
-          }
-        }
-
-        return docsById;
-      }
-
-      const scannedDocs = await scanBoletasByNormalizedControl(numero);
-      console.log('🔎 Coincidencias por respaldo normalizado:', scannedDocs.length);
-      return scannedDocs;
-    }
-
-    async function findBoletaFromAppsScript(numero){
-      const url = new URL(APPS_SCRIPT_BOLETAS_URL);
-      url.searchParams.set('numeroControl', numero);
-
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        cache: 'no-store'
-      });
-
-      let payload = null;
-      try {
-        payload = await response.json();
-      } catch (err) {
-        throw new Error('Apps Script no devolvió JSON válido.');
-      }
-
-      if (!response.ok || payload?.ok === false) {
-        throw new Error(payload?.error || 'No se pudo consultar la boleta.');
-      }
-
-      return payload.boleta || payload;
+      const control = normalizeControlValue(numero);
+      if (!control) return [];
+      const snapshot = await db.collection('boletas').doc(control).get();
+      return snapshot.exists ? [snapshot] : [];
     }
 
     function buildMateria(row){
@@ -765,19 +719,29 @@
       console.log('📚 Total de materias:', materias.length);
       console.log('📋 Materias:', materias);
 
-      const materiasRows = materias.map(m => `
-        <tr>
-          <td>${escapeHtml(m.clave || '')}</td>
-          <td class="asign">${escapeHtml(m.nombre || '')}</td>
-          <td>${m.p1 ?? ''}</td>
-          <td>${m.p2 ?? ''}</td>
-          <td>${m.p3 ?? ''}</td>
-          <td>${m.calificacion_final ?? ''}</td>
-          <td>${m.a1 ?? ''}</td>
-          <td>${m.a2 ?? ''}</td>
-          <td>${m.a3 ?? ''}</td>
-        </tr>
-      `).join('');
+      const materiasRows = materias.map(m => {
+        // Compatibilidad con boletas importadas con el formato anterior.
+        const nombre = m.nombre || m.asignatura || m.nombre_asignatura || m.materia || '';
+        const p1 = m.p1 ?? m.periodo_1 ?? '';
+        const p2 = m.p2 ?? m.periodo_2 ?? '';
+        const p3 = m.p3 ?? m.periodo_3 ?? '';
+        const a1 = m.a1 ?? m.asistencia_periodo_1 ?? '';
+        const a2 = m.a2 ?? m.asistencia_periodo_2 ?? '';
+        const a3 = m.a3 ?? m.asistencia_periodo_3 ?? '';
+        return `
+          <tr>
+            <td>${escapeHtml(m.clave || m.clv_centro || '')}</td>
+            <td class="asign">${escapeHtml(nombre)}</td>
+            <td>${p1}</td>
+            <td>${p2}</td>
+            <td>${p3}</td>
+            <td>${m.calificacion_final ?? ''}</td>
+            <td>${a1}</td>
+            <td>${a2}</td>
+            <td>${a3}</td>
+          </tr>
+        `;
+      }).join('');
 
       boletaHtml.innerHTML = `
         <div class="boleta-document">
@@ -858,33 +822,30 @@
       try {
         let data;
 
-        if (USE_APPS_SCRIPT) {
-          console.log('🔍 Buscando boleta en Apps Script para:', numero);
-          data = normalizeAppsScriptBoletaData(await findBoletaFromAppsScript(numero), numero);
-        } else {
-          console.log('🔍 Buscando boleta para:', numero);
-          console.log('🔢 Variantes de búsqueda:', controlSearchValues(numero));
-          const docs = await findBoleta(numero);
+        console.log('🔍 Buscando boleta para:', numero);
+        const docs = await findBoleta(numero);
 
-          if (!docs.length) {
-            console.warn('❌ No se encontró boleta para:', numero);
-            searchMsg.textContent = 'No se encontró la boleta para ese número.';
-            searchMsg.style.color = '#9b1d1d';
-            return;
-          }
-
-          data = normalizeBoletaData(docs, numero);
+        if (!docs.length) {
+          registerAccess('consulta_boleta', numero, 'no_encontrada');
+          console.warn('❌ No se encontró boleta para:', numero);
+          searchMsg.textContent = 'No se encontró la boleta para ese número.';
+          searchMsg.style.color = '#9b1d1d';
+          return;
         }
+
+        data = normalizeBoletaData(docs, numero);
 
         console.log('✅ Documento encontrado:', data);
         
         renderBoletaTemplate(data);
         boletaContainer.style.display = 'block';
         searchMsg.textContent = '';
+        registerAccess('consulta_boleta', numero, 'encontrada');
       } catch (err) {
         console.error('❌ Error buscando boleta:', err);
         searchMsg.textContent = 'Error al buscar la boleta: ' + (err.message || err);
         searchMsg.style.color = '#9b1d1d';
+        registerAccess('consulta_boleta', numero, 'error');
       } finally {
         searchInProgress = false;
         setSearchState();

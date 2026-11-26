@@ -5,7 +5,23 @@ service cloud.firestore {
     // Boletas: acceso para cualquier cuenta institucional
     match /boletas/{numeroControl} {
       allow read: if isCuentaInstitucional();
-      allow create, update, delete: if esCorreoCetis50();
+      allow create, update, delete: if isPanelAdmin();
+    }
+
+    // Bitácora de consulta de boletas. Cada cuenta institucional sólo puede
+    // crear eventos que lleven su propia identidad; sólo un administrador del
+    // panel puede revisarlos.
+    match /boletaAccessLogs/{logId} {
+      allow create: if esCuentaInstitucional()
+        && request.resource.data.keys().hasOnly([
+          'evento', 'numeroControl', 'resultado', 'uid', 'email',
+          'displayName', 'createdAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time;
+      allow read: if isPanelAdmin();
+      allow update, delete: if false;
     }
 
     // Horarios docentes: lectura solo docentes autorizados o admin
@@ -37,11 +53,10 @@ service cloud.firestore {
       allow read, create, update, delete: if esCorreoCetis50();
     }
 
-    // Usuarios: cada cuenta gestiona su propio documento; admin puede gestionar todos
+    // Usuarios: los permisos administrativos sólo los puede otorgar un admin.
     match /users/{userId} {
-      allow read: if isAdmin() || isOwnUserDoc(userId);
-      allow create, update: if isAdmin() || (esCorreoCetis50() && request.auth.uid == userId);
-      allow delete: if isAdmin();
+      allow read: if isPanelAdmin() || isUserManager() || isOwnUserDoc(userId);
+      allow create, update, delete: if isUserManager();
     }
 
     function esCorreoCetis50() {
@@ -72,6 +87,35 @@ service cloud.firestore {
       return request.auth != null &&
         (request.auth.token.role == 'admin' ||
          request.auth.token.isAdmin == true);
+    }
+
+    // Cuenta inicial del proyecto: puede registrar a los demás administradores
+    // desde el panel. No concede acceso administrativo a alumnos.
+    function isBootstrapAdmin() {
+      return request.auth != null &&
+        request.auth.token.email == 'luisalfonsomartinez@cetis50cdmx.com';
+    }
+
+    // Sólo estas cuentas pueden dar o retirar privilegios desde Gestión de
+    // Usuarios. Los demás administradores conservan sus funciones operativas.
+    function isUserManager() {
+      return request.auth != null &&
+        request.auth.token.email != null &&
+        request.auth.token.email in [
+          'lmartinez@cetis50cdmx.edu.mx',
+          'luisalfonsomartinez@cetis50cdmx.com'
+        ];
+    }
+
+    function isPanelAdmin() {
+      return isAdmin() || isBootstrapAdmin() || (
+        request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.canPublish == true ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.canPublishDocentes == true
+        )
+      );
     }
 
     function isDocentePorClaim() {
