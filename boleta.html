@@ -466,7 +466,7 @@
           boletaContainer.style.display = 'none';
           boletaHtml.innerHTML = '';
           if (user && !isAllowed) {
-            searchMsg.textContent = 'Debes iniciar sesión con tu cuenta institucional para consultar la boleta.';
+            searchMsg.textContent = 'Debes iniciar sesión con Google para consultar la boleta.';
             searchMsg.style.color = '#9b1d1d';
             setSearchState();
             if (!signingOutUnauthorized) {
@@ -478,7 +478,7 @@
               }
             }
           } else {
-            searchMsg.textContent = 'Inicia sesión con tu cuenta institucional para continuar.';
+            searchMsg.textContent = 'Inicia sesión con Google para continuar.';
             searchMsg.style.color = '#9b1d1d';
             setSearchState();
           }
@@ -493,7 +493,7 @@
 
     function ensureAuthorizedUser(){
       if (!isAuthorized) {
-        searchMsg.textContent = 'Debes iniciar sesión con tu cuenta institucional antes de buscar.';
+        searchMsg.textContent = 'Debes iniciar sesión con Google antes de buscar.';
         searchMsg.style.color = '#9b1d1d';
         return false;
       }
