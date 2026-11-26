@@ -358,7 +358,6 @@
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     const LOGO_URL = 'https://raw.githubusercontent.com/Prof-Luis1986/recursos-cetis50/refs/heads/main/logo-cetis50.jpg';
-    const ALLOWED_DOMAINS = ['@cetis50cdmx.com', '@cetis50cdmx.edu.mx'];
     const REDIRECT_FALLBACK_CODES = new Set([
       'auth/popup-blocked',
       'auth/popup-closed-by-user',
@@ -372,7 +371,6 @@
     let authKey = '';
     let loginInProgress = false;
     let searchInProgress = false;
-    let signingOutUnauthorized = false;
     searchBtn.disabled = true;
 
     function setSearchState(){
@@ -442,7 +440,8 @@
 
     auth.onAuthStateChanged(async (user) => {
         const nextAuthKey = user ? (user.uid || user.email || 'usuario') : 'sin-sesion';
-        const isAllowed = user && hasAllowedDomain(user);
+        // Cualquier cuenta autenticada con Google puede consultar su boleta.
+        const isAllowed = !!user;
 
         if (nextAuthKey === authKey && isAuthorized === !!isAllowed) {
           setSearchState();
@@ -465,30 +464,14 @@
           logoutBtn.style.display = 'none';
           boletaContainer.style.display = 'none';
           boletaHtml.innerHTML = '';
-          if (user && !isAllowed) {
-            searchMsg.textContent = 'Debes iniciar sesión con Google para consultar la boleta.';
-            searchMsg.style.color = '#9b1d1d';
-            setSearchState();
-            if (!signingOutUnauthorized) {
-              signingOutUnauthorized = true;
-              try {
-                await auth.signOut();
-              } finally {
-                signingOutUnauthorized = false;
-              }
-            }
-          } else {
-            searchMsg.textContent = 'Inicia sesión con Google para continuar.';
-            searchMsg.style.color = '#9b1d1d';
-            setSearchState();
-          }
+          searchMsg.textContent = 'Inicia sesión con Google para continuar.';
+          searchMsg.style.color = '#9b1d1d';
+          setSearchState();
         }
     });
 
-    function hasAllowedDomain(user){
-      if (!user || !user.email) return false;
-      const email = user.email.toLowerCase();
-      return ALLOWED_DOMAINS.some(domain => email.endsWith(domain));
+    function hasGoogleSession(user){
+      return !!user;
     }
 
     function ensureAuthorizedUser(){
@@ -502,7 +485,7 @@
 
     function registerAccess(evento, numeroControl = '', resultado = '') {
       const user = auth.currentUser;
-      if (!user || !hasAllowedDomain(user)) return;
+      if (!hasGoogleSession(user)) return;
 
       db.collection('boletaAccessLogs').add({
         evento,
