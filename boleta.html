@@ -708,9 +708,6 @@
         const p1 = m.p1 ?? m.periodo_1 ?? '';
         const p2 = m.p2 ?? m.periodo_2 ?? '';
         const p3 = m.p3 ?? m.periodo_3 ?? '';
-        const a1 = m.a1 ?? m.asistencia_periodo_1 ?? '';
-        const a2 = m.a2 ?? m.asistencia_periodo_2 ?? '';
-        const a3 = m.a3 ?? m.asistencia_periodo_3 ?? '';
         return `
           <tr>
             <td>${escapeHtml(m.clave || m.clv_centro || '')}</td>
@@ -719,9 +716,6 @@
             <td>${p2}</td>
             <td>${p3}</td>
             <td>${m.calificacion_final ?? ''}</td>
-            <td>${a1}</td>
-            <td>${a2}</td>
-            <td>${a3}</td>
           </tr>
         `;
       }).join('');
@@ -761,13 +755,10 @@
                   <th>2DO. P.</th>
                   <th>3ER. P.</th>
                   <th>FINAL</th>
-                  <th>1ER. A.</th>
-                  <th>2DO. A.</th>
-                  <th>3ER. A.</th>
                 </tr>
               </thead>
               <tbody>
-                ${materiasRows || '<tr><td colspan="9">No hay materias registradas</td></tr>'}
+                ${materiasRows || '<tr><td colspan="6">No hay materias registradas</td></tr>'}
               </tbody>
             </table>
           </div>
