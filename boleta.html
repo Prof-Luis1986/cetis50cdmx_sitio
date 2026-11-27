@@ -710,7 +710,6 @@
         const p3 = m.p3 ?? m.periodo_3 ?? '';
         return `
           <tr>
-            <td>${escapeHtml(m.clave || m.clv_centro || '')}</td>
             <td class="asign">${escapeHtml(nombre)}</td>
             <td>${p1}</td>
             <td>${p2}</td>
@@ -749,7 +748,6 @@
             <table class="boleta-table">
               <thead>
                 <tr>
-                  <th>CLAVE</th>
                   <th>ASIGNATURA / MÓDULO</th>
                   <th>1ER. P.</th>
                   <th>2DO. P.</th>
@@ -758,7 +756,7 @@
                 </tr>
               </thead>
               <tbody>
-                ${materiasRows || '<tr><td colspan="6">No hay materias registradas</td></tr>'}
+                ${materiasRows || '<tr><td colspan="5">No hay materias registradas</td></tr>'}
               </tbody>
             </table>
           </div>
